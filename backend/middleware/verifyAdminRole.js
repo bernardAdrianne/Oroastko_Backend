@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret"; 
+const JWT_SECRET = process.env.OROASTKO_SECRET || "oroastko_secret_key";
 
 export const verifyAdminRole = (req, res, next) => {
     try {
@@ -8,6 +8,7 @@ export const verifyAdminRole = (req, res, next) => {
         const decodedToken = jwt.verify(token, JWT_SECRET);
 
         if (decodedToken && decodedToken.role === 'admin') { 
+            req.admin = { adminId: decodedToken.id };
             next(); 
         } else {
             return res.status(403).json({ success: false, message: "Access denied. Admins only." });
