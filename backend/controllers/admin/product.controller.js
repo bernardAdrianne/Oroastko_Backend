@@ -1,23 +1,9 @@
 import mongoose from 'mongoose';
 import Product from '../../models/product.model.js';
 import Category from '../../models/admin/admin.category.model.js';
-import Blacklist from '../../models/blacklist/blacklist.model.js';
 
-const verifyToken = async (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    if (!authHeader) return res.status(401).json({ success: false, message: "No token provided." });
-    
-    const token = authHeader.split(' ')[1];
-    if (!token) return res.status(401).json({ success: false, message: "Token not found." });
 
-    const isBlacklisted = await Blacklist.findOne({ token });
-    if (isBlacklisted) return res.status(401).json({ success: false, message: "Token has been logged out." });
-    
-    req.token = token;
-    next();
-};
-
-export const getProducts = [verifyToken, async (req, res) => {
+export const getProducts = async (req, res) => {
     try {
         const products = await Product.find({}).select('name price stock_quantity category');
         return res.status(200).json({ success: true, data: products });
@@ -25,9 +11,9 @@ export const getProducts = [verifyToken, async (req, res) => {
         console.error("Error fetching products:", error.message);
         return res.status(500).json({ success: false, message: "Server error" });
     }
-}];
+};
 
-export const getViewProduct = [verifyToken, async (req, res) => {
+export const getViewProduct = async (req, res) => {
     const { id } = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -44,9 +30,9 @@ export const getViewProduct = [verifyToken, async (req, res) => {
         console.error("Error fetching product:", error.message);
         return res.status(500).json({ success: false, message: "Server error" });
     }
-}];
+};
 
-export const createProduct = [verifyToken, async (req, res) => {
+export const createProduct = async (req, res) => {
     const { name, price, stock_quantity, image, category } = req.body;
 
     if (!name || !price || !stock_quantity || !image || !category) {
@@ -70,9 +56,9 @@ export const createProduct = [verifyToken, async (req, res) => {
         console.error("Error adding new product:", error.message);
         return res.status(500).json({ success: false, message: "Server error" });
     }
-}];
+};
 
-export const updateProduct = [verifyToken, async (req, res) => {
+export const updateProduct = async (req, res) => {
     const { id } = req.params;
 
     const product = req.body;
@@ -88,9 +74,9 @@ export const updateProduct = [verifyToken, async (req, res) => {
         console.error("Error updating product:", error.message);
         return res.status(500).json({ success: false, message: "Server error" });
     }
-}];
+};
 
-export const deleteProduct = [verifyToken, async (req, res) => { 
+export const deleteProduct = async (req, res) => { 
     const { id } = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -109,4 +95,4 @@ export const deleteProduct = [verifyToken, async (req, res) => {
         console.error("Error deleting product:", error.message); 
         return res.status(500).json({ success: false, message: "Server error" });
     }
-}];
+};

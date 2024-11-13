@@ -1,23 +1,9 @@
 import mongoose from 'mongoose';
 import Category from '../../models/admin/admin.category.model.js';
 import Product from '../../models/product.model.js';
-import Blacklist from '../../models/blacklist/blacklist.model.js';
 
-const verifyToken = async (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    if (!authHeader) return res.status(401).json({ success: false, message: "No token provided." });
-    
-    const token = authHeader.split(' ')[1];
-    if (!token) return res.status(401).json({ success: false, message: "Token not found." });
 
-    const isBlacklisted = await Blacklist.findOne({ token });
-    if (isBlacklisted) return res.status(401).json({ success: false, message: "Token has been logged out." });
-    
-    req.token = token;
-    next();
-};
-
-export const viewCategories = [verifyToken, async (req, res) => {
+export const viewCategories = async (req, res) => {
     try {
         const categories = await Category.find({});
         return res.status(200).json({ success: true, data: categories || [] });
@@ -25,9 +11,9 @@ export const viewCategories = [verifyToken, async (req, res) => {
         console.error("Error fetching all categories:", error.message);
         return res.status(500).json({ success: false, message: "Server error." });
     }
-}];
+};
 
-export const viewCategory = [verifyToken, async (req, res) => {
+export const viewCategory = async (req, res) => {
     const { id } = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -46,9 +32,9 @@ export const viewCategory = [verifyToken, async (req, res) => {
         console.error("Error fetching category:", error.message);
         return res.status(500).json({ success: false, message: "Server error." });
     }
-}];
+};
 
-export const addCategory = [verifyToken, async (req, res) => {
+export const addCategory =  async (req, res) => {
     const { categoryName } = req.body;
     if (!categoryName) return res.status(400).json({ success: false, message: "Please provide the category name." });
 
@@ -60,9 +46,9 @@ export const addCategory = [verifyToken, async (req, res) => {
         console.error("Error adding new category:", error.message);
         return res.status(500).json({ success: false, message: "Server error." });
     }
-}];
+};
 
-export const updateCategory = [verifyToken, async (req, res) => {
+export const updateCategory = async (req, res) => {
     const { id } = req.params;
     const { categoryName } = req.body;
 
@@ -82,9 +68,9 @@ export const updateCategory = [verifyToken, async (req, res) => {
         console.error("Error updating category:", error.message);
         return res.status(500).json({ success: false, message: "Server error." });
     }
-}];
+};
 
-export const deleteCategory = [verifyToken, async (req, res) => {
+export const deleteCategory = async (req, res) => {
     const { id } = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -102,4 +88,4 @@ export const deleteCategory = [verifyToken, async (req, res) => {
         console.error("Error deleting category:", error.message);
         return res.status(500).json({ success: false, message: "Server error." });
     }
-}];
+};

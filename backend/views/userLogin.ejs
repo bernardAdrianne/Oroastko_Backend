@@ -25,7 +25,7 @@
             const email = e.target.email.value;
             const password = e.target.password.value; 
 
-            const response = await fetch('/oroastko/user/login', { // Updated route
+            const response = await fetch('/oroastko/user/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -37,9 +37,7 @@
             console.log(data); // Log the response
 
             if (data.success) {
-                // Store the token in local storage or a cookie
                 localStorage.setItem('authToken', data.token);
-                // Redirect to the product browsing page
                 window.location.href = '/oroastko/user/products';
             } else {
                 alert(data.message);

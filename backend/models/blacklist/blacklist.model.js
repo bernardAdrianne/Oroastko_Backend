@@ -1,3 +1,5 @@
+// Blacklist model db
+
 import mongoose from 'mongoose';
 
 const blacklistSchema = new mongoose.Schema({
@@ -13,6 +15,6 @@ const blacklistSchema = new mongoose.Schema({
     }
 });
 
-const Blacklist = mongoose.model('Blacklist', blacklistSchema);
+const Blacklist = mongoose.model('Blacklist', blacklistSchema, 'blacklist');
 
 export default Blacklist;

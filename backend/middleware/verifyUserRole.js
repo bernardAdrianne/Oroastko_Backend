@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret"; 
+const JWT_SECRET = process.env.OROASTKO_SECRET || "oroastko_secret_key";
 
 export const verifyUserRole = (req, res, next) => {
     try {

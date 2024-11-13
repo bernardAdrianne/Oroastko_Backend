@@ -3,7 +3,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import Blacklist from '../../models/blacklist/blacklist.model.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret"; 
+const JWT_SECRET = process.env.OROASTKO_SECRET || "oroastko_secret_key";
 
 const validateEmail = (email) => {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -15,19 +15,6 @@ const validatePhoneNumber = (phone) => {
     return regex.test(phone);
 };
 
-const verifyToken = async (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    if (!authHeader) return res.status(401).json({ success: false, message: "No token provided." });
-    
-    const token = authHeader.split(' ')[1];
-    if (!token) return res.status(401).json({ success: false, message: "Token not found." });
-
-    const isBlacklisted = await Blacklist.findOne({ token });
-    if (isBlacklisted) return res.status(401).json({ success: false, message: "Token has been logged out." });
-    
-    req.token = token;
-    next();
-};
 
 export const registerAdmin = async (req, res) => {
     const { name, email, password } = req.body;
@@ -87,6 +74,12 @@ export const loginAdmin = async (req, res) => {
 
         const token = jwt.sign({ id: admin._id, email: admin.email, role: 'admin' }, JWT_SECRET, { expiresIn: '1h' });
 
+        res.cookie('authToken', token, {
+            httpOnly: true,
+            secure: process.env.MODE_ENV === 'production',
+            maxAge: 60 * 60 * 1000 
+        });
+
         return res.status(200).json({ success: true, message: "Logged in successfully.", token });
     } catch (error) {
         console.error("Error logging in:", error.message);
@@ -94,28 +87,27 @@ export const loginAdmin = async (req, res) => {
     }
 };
 
-export const logoutAdmin = [verifyToken, async (req,res) => {
+export const logoutAdmin = async (req,res) => {
     try {
-        const blacklistedToken = new Blacklist({ token: req.token });
+        const authHeader = req.headers['authorization'];
+        const token = authHeader ? authHeader.split(' ')[1] : req.cookies.authToken;
+
+        if (!token) return res.status(403).json({ success: false, message: "No token found for logging out." });
+
+        const blacklistedToken = new Blacklist({ token });
         await blacklistedToken.save();
-    
+
+        res.clearCookie('authToken');
         return res.status(200).json({ success: true, message: "Logged out successfully." });
     } catch (error) {
         console.error("Error logging out admin:", error.message);
         return res.status(500).json({ success: false, message: "Server error." });
     }
-}];  
+};  
 
-export const getAdminProfile = [verifyToken, async (req, res) => {
+export const getAdminProfile = async (req, res) => {
     try {
-        const decoded = jwt.verify(req.token, JWT_SECRET);
-
-        if (!decoded) {
-            return res.status(401).json({ success: false, message: "Invalid token." });
-        }
-
-        const admin = await AdminUser.findById(decoded.id).select('-password'); 
-
+        const admin = await AdminUser.findById(req.admin.adminId).select('-password'); 
         if (!admin) {
             return res.status(404).json({ success: false, message: "Admin not found." });
         }
@@ -125,19 +117,12 @@ export const getAdminProfile = [verifyToken, async (req, res) => {
         console.error("Error verifying or fetching admin profile:", error.message);
         return res.status(401).json({ success: false, message: "Unauthorized" });
     }
-}];
+};
 
-export const updateAdminProfile = [verifyToken, async (req, res) => {
+export const updateAdminProfile = async (req, res) => {
     try {
-        const decoded = jwt.verify(req.token, JWT_SECRET);
-
-        if (!decoded) {
-            return res.status(401).json({ success: false, message: "Invalid token." });
-        }
-
-        const admin = decoded.id;
-
         const { name, phoneNumber, adminImage, password } = req.body;
+        const admin = req.admin.adminId;
 
         if (phoneNumber && !validatePhoneNumber(phoneNumber)) {
             return res.status(400).json({ success: false, message: "Invalid phone number." });
@@ -153,7 +138,6 @@ export const updateAdminProfile = [verifyToken, async (req, res) => {
         if (password) updateData.password = await bcrypt.hash(password, 10);
 
         const updatedAdmin = await AdminUser.findByIdAndUpdate(admin, updateData, { new: true });
-
         if (!updatedAdmin) {
             return res.status(404).json({ success: false, message: "Admin not found." });
         }
@@ -163,4 +147,4 @@ export const updateAdminProfile = [verifyToken, async (req, res) => {
         console.error("Error updating admin:", error.message);
         return res.status(500).json({ success: false, message: "Server error" });
     }
-}];
+};
