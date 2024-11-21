@@ -2,8 +2,35 @@ import User from '../../models/user.model.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import Blacklist from '../../models/blacklist/blacklist.model.js';
+import crypto from 'crypto';
 
-const JWT_SECRET = process.env.OROASTKO_SECRET || "oroastko_secret_key";
+const encrypt = (text) => {
+    try {
+        const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(process.env.AES_KEY, 'hex'), Buffer.from(process.env.AES_IV, 'hex'));
+        console.log("Cipher created successfully:", cipher); 
+
+        let encrypted = cipher.update(text, 'utf8', 'hex');
+        encrypted += cipher.final('hex');
+
+        return encrypted;
+    } catch (error) {   
+        console.error("Encryption error:", error.message);
+        throw error;
+    }
+};
+
+const decrypt = (encryptedText) => {
+    try {
+    const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(AES_KEY, 'hex'), Buffer.from(AES_IV, 'hex'));
+    let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+ 
+    return decrypted;
+    } catch (error) {
+        console.error("Decryption error:", error.message);
+        throw error;
+    }
+};
 
 const validateEmail = (email) => {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -14,19 +41,6 @@ const validatePhoneNumber = (phone) => {
     const regex = /^(?:\+63|0)(9\d{9})$/;
     return regex.test(phone);
 };
-//     const authHeader = req.headers['authorization'];
-//     if (!authHeader) return res.status(403).json({ success: false, message: "No token provided." });
-
-//     const token = authHeader.split(' ')[1];
-//     if (!token) return res.status(403).json({ success: false, message: "No token found." });
-
-//     const isBlacklisted = await Blacklist.findOne({ token });
-//     if (isBlacklisted) return res.status(403).json({ success: false, message: "Token has been logged out." });
-
-//     req.token = token;
-//     next();
-// };
-
 
 export const registerUser = async (req, res) => {
     const { username, email, password } = req.body;
@@ -51,7 +65,12 @@ export const registerUser = async (req, res) => {
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-        const newUser = new User({ username, email, password: hashedPassword });
+        const newUser = new User({ 
+            username, 
+            email, 
+            password: hashedPassword 
+        });
+        
         await newUser.save();
 
         return res.status(201).json({ success: true, message: "User registered successfully."});
@@ -83,7 +102,7 @@ export const loginUser = async (req, res) => {
             return res.status(401).json({ success: false, message: "Invalid credentials." });
         }
 
-        const token = jwt.sign({ userId: user._id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ userId: user._id, email: user.email, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
         res.cookie('authToken', token, {
             httpOnly: true,

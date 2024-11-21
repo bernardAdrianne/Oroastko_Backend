@@ -15,6 +15,6 @@ const blacklistSchema = new mongoose.Schema({
     }
 });
 
-const Blacklist = mongoose.model('Blacklist', blacklistSchema, 'blacklist');
+const Blacklist = mongoose.model('Blacklist', blacklistSchema, 'blacklists');
 
 export default Blacklist;

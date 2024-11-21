@@ -1,6 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import path from 'path';
+import cors from 'cors';    
 import cookieParser from 'cookie-parser';
 import { fileURLToPath } from 'url';
 import { connectDB } from './config/db.js';
@@ -14,6 +15,7 @@ import userRoutes from './routes/user route/user.route.js';
 import userProductBrowsingController from './routes/user route/user.product.browsing.route.js';
 import userCartController from './routes/user route/user.cart.route.js';
 
+
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -23,8 +25,13 @@ const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
 app.use(cookieParser());
+
+app.use(cors({
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+}));
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));

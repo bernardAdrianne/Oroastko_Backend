@@ -2,8 +2,35 @@ import AdminUser from '../../models/admin/admin.user.model.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import Blacklist from '../../models/blacklist/blacklist.model.js';
+import crypto from 'crypto';
 
-const JWT_SECRET = process.env.OROASTKO_SECRET || "oroastko_secret_key";
+const encrypt = (text) => {
+    try {
+        const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(process.env.AES_KEY, 'hex'), Buffer.from(process.env.AES_IV, 'hex'));
+        console.log("Cipher created successfully:", cipher); 
+
+        let encrypted = cipher.update(text, 'utf8', 'hex');
+        encrypted += cipher.final('hex');
+        
+        return encrypted;
+    } catch (error) {   
+        console.error("Encryption error:", error.message);
+        throw error;
+    }
+};
+
+const decrypt = (encryptedText) => {
+    try { 
+    const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(process.env.AES_KEY, 'hex'), Buffer.from(process.env.AES_IV, 'hex'));
+    let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+
+    return decrypted;
+    } catch (error) {
+        console.error("Decryption error:", error.message);
+        throw error;
+    }
+};
 
 const validateEmail = (email) => {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -15,14 +42,13 @@ const validatePhoneNumber = (phone) => {
     return regex.test(phone);
 };
 
-
 export const registerAdmin = async (req, res) => {
     const { name, email, password } = req.body;
 
     if (!name) {
         return res.status(400).json({ success: false, message: "Please provide your name." });
     }
-    if (!validateEmail(email)) {
+    if (!email || !validateEmail(email)) {
         return res.status(400).json({ success: false, message: "Invalid email format." });
     }
     if (!password || password.length < 6) {
@@ -30,7 +56,8 @@ export const registerAdmin = async (req, res) => {
     }
 
     try {
-        const existingAdmin = await AdminUser.findOne({ email }); 
+        const encryptedEmail = encrypt(email);
+        const existingAdmin = await AdminUser.findOne({ email: encryptedEmail }); 
 
         if (existingAdmin) {
             return res.status(409).json({ success: false, message: "Admin already exists." });
@@ -39,12 +66,15 @@ export const registerAdmin = async (req, res) => {
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-        const newAdmin = new AdminUser({ name, email, password: hashedPassword });
+        const newAdmin = new AdminUser({ 
+            name, 
+            email: encryptedEmail,
+            password: hashedPassword,
+        });
+        
         await newAdmin.save();
 
-        const token = jwt.sign({ id: newAdmin._id, email: newAdmin.email, role: 'admin'},  JWT_SECRET, { expiresIn: '1h' });
-
-        return res.status(201).json({ success: true, message: "Admin registered successfully.", token });
+        return res.status(201).json({ success: true, message: "Admin registered successfully." });
     } catch (error) {
         console.error("Error creating admin:", error.message);
         return res.status(500).json({ success: false, message: "Server error" });
@@ -72,7 +102,7 @@ export const loginAdmin = async (req, res) => {
             return res.status(401).json({ success: false, message: "Invalid credentials." });
         }
 
-        const token = jwt.sign({ id: admin._id, email: admin.email, role: 'admin' }, JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ id: admin._id, email: admin.email, role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
         res.cookie('authToken', token, {
             httpOnly: true,
