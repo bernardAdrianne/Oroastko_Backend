@@ -4,33 +4,37 @@ import jwt from 'jsonwebtoken';
 import Blacklist from '../../models/blacklist/blacklist.model.js';
 import crypto from 'crypto';
 
-const encrypt = (text) => {
-    try {
-        const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(process.env.AES_KEY, 'hex'), Buffer.from(process.env.AES_IV, 'hex'));
-        console.log("Cipher created successfully:", cipher); 
 
-        let encrypted = cipher.update(text, 'utf8', 'hex');
-        encrypted += cipher.final('hex');
-        
-        return encrypted;
-    } catch (error) {   
-        console.error("Encryption error:", error.message);
-        throw error;
-    }
-};
+function encrypt(text) {
+    if (!process.env.AES_KEY) throw new Error("AES_KEY is undefined.");
+    if (!text) throw new Error("Text to encrypt is undefined.");
 
-const decrypt = (encryptedText) => {
-    try { 
-    const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(process.env.AES_KEY, 'hex'), Buffer.from(process.env.AES_IV, 'hex'));
+    const key = Buffer.from(process.env.AES_KEY, 'base64');
+    if (key.length !== 32) throw new Error("Invalid AES_KEY length. Expected 32 bytes.");
+
+    const iv = crypto.randomBytes(16); 
+    const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
+
+    let encrypted = cipher.update(text, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+    return { iv: iv.toString('hex'), encryptedData: encrypted };
+}
+
+function decrypt(encryptedText, key, iv) {
+    if (!key) throw new Error("AES_KEY is undefined.");
+    if (!encryptedText || !iv) throw new Error("Encrypted data or IV is missing.");
+
+    const decipher = crypto.createDecipheriv(
+        'aes-256-cbc', 
+        Buffer.from(key, 'base64'), 
+        Buffer.from(iv, 'hex')
+    );
+
     let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
     decrypted += decipher.final('utf8');
-
     return decrypted;
-    } catch (error) {
-        console.error("Decryption error:", error.message);
-        throw error;
-    }
-};
+}
+
 
 const validateEmail = (email) => {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -56,20 +60,21 @@ export const registerAdmin = async (req, res) => {
     }
 
     try {
-        const encryptedEmail = encrypt(email);
-        const existingAdmin = await AdminUser.findOne({ email: encryptedEmail }); 
+        const { iv, encryptedData } = encrypt(password);
+        const existingAdmin = await AdminUser.findOne({ email }); 
 
         if (existingAdmin) {
             return res.status(409).json({ success: false, message: "Admin already exists." });
         }
 
-        const saltRounds = 10;
-        const hashedPassword = await bcrypt.hash(password, saltRounds);
+        // const saltRounds = 10;
+        // const hashedPassword = await bcrypt.hash(password, saltRounds);
 
         const newAdmin = new AdminUser({ 
             name, 
-            email: encryptedEmail,
-            password: hashedPassword,
+            email,
+            password: encryptedData,
+            iv: iv,
         });
         
         await newAdmin.save();
@@ -97,8 +102,13 @@ export const loginAdmin = async (req, res) => {
             return res.status(404).json({ success: false, message: "Admin not found." });
         }
 
-        const isPasswordValid = await bcrypt.compare(password, admin.password);
-        if (!isPasswordValid) {
+        // const isPasswordValid = await bcrypt.compare(password, admin.password);
+        // if (!isPasswordValid) {
+        //     return res.status(401).json({ success: false, message: "Invalid credentials." });
+        // }
+
+        const decryptedPassword = decrypt(admin.password, process.env.AES_KEY, admin.iv);
+        if (password !== decryptedPassword) {
             return res.status(401).json({ success: false, message: "Invalid credentials." });
         }
 
@@ -137,7 +147,7 @@ export const logoutAdmin = async (req,res) => {
 
 export const getAdminProfile = async (req, res) => {
     try {
-        const admin = await AdminUser.findById(req.admin.adminId).select('-password'); 
+        const admin = await AdminUser.findById(req.admin.id).select('-password');
         if (!admin) {
             return res.status(404).json({ success: false, message: "Admin not found." });
         }
@@ -152,7 +162,7 @@ export const getAdminProfile = async (req, res) => {
 export const updateAdminProfile = async (req, res) => {
     try {
         const { name, phoneNumber, adminImage, password } = req.body;
-        const admin = req.admin.adminId;
+        const adminId = req.admin.id;
 
         if (phoneNumber && !validatePhoneNumber(phoneNumber)) {
             return res.status(400).json({ success: false, message: "Invalid phone number." });
@@ -165,9 +175,14 @@ export const updateAdminProfile = async (req, res) => {
         if (name) updateData.name = name;
         if (phoneNumber) updateData.phoneNumber = phoneNumber;
         if (adminImage) updateData.adminImage = adminImage;
-        if (password) updateData.password = await bcrypt.hash(password, 10);
 
-        const updatedAdmin = await AdminUser.findByIdAndUpdate(admin, updateData, { new: true });
+        if (password) {
+            const { iv, encryptedData } = encrypt(password);
+            updateData.password = encryptedData;
+            updateData.iv = iv; 
+        }
+
+        const updatedAdmin = await AdminUser.findByIdAndUpdate(adminId, updateData, { new: true });
         if (!updatedAdmin) {
             return res.status(404).json({ success: false, message: "Admin not found." });
         }

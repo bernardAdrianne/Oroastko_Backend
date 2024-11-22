@@ -8,7 +8,7 @@ export const verifyUserRole = (req, res, next) => {
         if (decodedToken && decodedToken.role === 'user') { 
             next(); 
         } else {
-            return res.status(403).json({ success: false, message: "Access denied. Users only." });
+            return res.status(403).json({ success: false, message: "Access denied. Customers only." });
         }
     } catch (error) {
         return res.status(401).json({ success: false, message: "Invalid or missing token." });

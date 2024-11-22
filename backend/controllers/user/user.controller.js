@@ -4,33 +4,37 @@ import jwt from 'jsonwebtoken';
 import Blacklist from '../../models/blacklist/blacklist.model.js';
 import crypto from 'crypto';
 
-const encrypt = (text) => {
-    try {
-        const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(process.env.AES_KEY, 'hex'), Buffer.from(process.env.AES_IV, 'hex'));
-        console.log("Cipher created successfully:", cipher); 
 
-        let encrypted = cipher.update(text, 'utf8', 'hex');
-        encrypted += cipher.final('hex');
+function encrypt(text) {
+    if (!process.env.AES_KEY) throw new Error("AES_KEY is undefined.");
+    if (!text) throw new Error("Text to encrypt is undefined.");
 
-        return encrypted;
-    } catch (error) {   
-        console.error("Encryption error:", error.message);
-        throw error;
-    }
-};
+    const key = Buffer.from(process.env.AES_KEY, 'base64');
+    if (key.length !== 32) throw new Error("Invalid AES_KEY length. Expected 32 bytes.");
 
-const decrypt = (encryptedText) => {
-    try {
-    const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(AES_KEY, 'hex'), Buffer.from(AES_IV, 'hex'));
+    const iv = crypto.randomBytes(16); 
+    const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
+
+    let encrypted = cipher.update(text, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+    return { iv: iv.toString('hex'), encryptedData: encrypted };
+}
+
+function decrypt(encryptedText, key, iv) {
+    if (!key) throw new Error("AES_KEY is undefined.");
+    if (!encryptedText || !iv) throw new Error("Encrypted data or IV is missing.");
+
+    const decipher = crypto.createDecipheriv(
+        'aes-256-cbc', 
+        Buffer.from(key, 'base64'), 
+        Buffer.from(iv, 'hex')
+    );
+
     let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
     decrypted += decipher.final('utf8');
- 
     return decrypted;
-    } catch (error) {
-        console.error("Decryption error:", error.message);
-        throw error;
-    }
-};
+}
+
 
 const validateEmail = (email) => {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -56,19 +60,21 @@ export const registerUser = async (req, res) => {
     }
 
     try {
+        const { iv, encryptedData } = encrypt(password);
         const existingUser = await User.findOne({ email });
 
         if (existingUser) {
             return res.status(409).json({ success: false, message: "User already exists." });
         }
 
-        const saltRounds = 10;
-        const hashedPassword = await bcrypt.hash(password, saltRounds);
+        // const saltRounds = 10;
+        // const hashedPassword = await bcrypt.hash(password, saltRounds);
 
         const newUser = new User({ 
             username, 
             email, 
-            password: hashedPassword 
+            password: encryptedData,
+            iv: iv, 
         });
         
         await newUser.save();
@@ -93,12 +99,16 @@ export const loginUser = async (req, res) => {
     try {
         const user = await User.findOne({ email });
         if (!user) {
-            console.log("User not found:", email);
             return res.status(404).json({ success: false, message: "User not found." });
         }
 
-        const isPasswordMatch = await bcrypt.compare(password, user.password);
-        if (!isPasswordMatch) {
+        // const isPasswordMatch = await bcrypt.compare(password, user.password);
+        // if (!isPasswordMatch) {
+        //     return res.status(401).json({ success: false, message: "Invalid credentials." });
+        // }
+
+        const decryptedPassword = decrypt(user.password, process.env.AES_KEY, user.iv);
+        if (password !== decryptedPassword) {
             return res.status(401).json({ success: false, message: "Invalid credentials." });
         }
 
@@ -166,7 +176,13 @@ export const updateProfile = async (req, res) => {
         if (address) updateData.address = address;
         if (phoneNumber) updateData.phoneNumber = phoneNumber;
         if (userImage) updateData.userImage = userImage;
-        if (password) updateData.password = await bcrypt.hash(password, 10);
+        // if (password) updateData.password = await bcrypt.hash(password, 10);
+
+        if (password) {
+            const { iv, encryptedData } = encrypt(password);
+            updateData.password = encryptedData;
+            updateData.iv = iv;
+        }
 
         const updatedUser = await User.findByIdAndUpdate(userId, updateData, { new: true });
         if (!updatedUser) {

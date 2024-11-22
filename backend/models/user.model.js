@@ -38,6 +38,10 @@ const userSchema = new mongoose.Schema({
         default: "user",
         enum: ["user", "admin"]
     },
+    iv: {
+        type: String,
+        required: true
+    },
 },
     {
         timestamps: true,

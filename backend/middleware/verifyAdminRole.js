@@ -2,11 +2,16 @@ import jwt from 'jsonwebtoken';
 
 export const verifyAdminRole = (req, res, next) => {
     try {
-        const token = req.headers.authorization.split(" ")[1];
+        const token = req.headers.authorization && req.headers.authorization.split(" ")[1];
+        if (!token) {
+            return res.status(403).json({ success: false, message: "Access denied. No token provided." });
+        }
+
         const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
 
-        if (decodedToken && decodedToken.role === 'admin') { 
-            next(); 
+        if (decodedToken && decodedToken.role === 'admin') {
+            req.admin = decodedToken;  // Attach the entire decoded token to req.admin
+            next();
         } else {
             return res.status(403).json({ success: false, message: "Access denied. Admins only." });
         }

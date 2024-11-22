@@ -1,5 +1,8 @@
-import express from 'express';
 import dotenv from 'dotenv';
+dotenv.config();
+
+import express from 'express';
+
 import path from 'path';
 import cors from 'cors';    
 import cookieParser from 'cookie-parser';
@@ -15,8 +18,6 @@ import userRoutes from './routes/user route/user.route.js';
 import userProductBrowsingController from './routes/user route/user.product.browsing.route.js';
 import userCartController from './routes/user route/user.cart.route.js';
 
-
-dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
