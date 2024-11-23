@@ -15,9 +15,9 @@ import categoryRoutes from './routes/admin route/admin.category.route.js'
 import viewUsers from './routes/admin route/admin.user.route.js'
 
 import userRoutes from './routes/user route/user.route.js'; 
-import userProductBrowsingController from './routes/user route/user.product.browsing.route.js';
-import userCartController from './routes/user route/user.cart.route.js';
-
+import userProductBrowsing from './routes/user route/user.product.browsing.route.js';
+import userCart from './routes/user route/user.cart.route.js';
+import userOrder from './routes/user route/user.order.route.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -51,8 +51,9 @@ app.get('/oroastko/admin/login', (req, res) => {
 
 //User routes
 app.use("/oroastko/user", userRoutes);
-app.use("/oroastko/user/products", userProductBrowsingController);
-app.use("/oroastko/user/cart", userCartController);
+app.use("/oroastko/user/products", userProductBrowsing);
+app.use("/oroastko/user/cart", userCart);
+app.use("/oroastko/user/order", userOrder);
 
 //User login render
 app.get('/oroastko/user/login', (req, res) => {

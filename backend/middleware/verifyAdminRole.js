@@ -10,7 +10,7 @@ export const verifyAdminRole = (req, res, next) => {
         const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
 
         if (decodedToken && decodedToken.role === 'admin') {
-            req.admin = decodedToken;  // Attach the entire decoded token to req.admin
+            req.admin = decodedToken; 
             next();
         } else {
             return res.status(403).json({ success: false, message: "Access denied. Admins only." });

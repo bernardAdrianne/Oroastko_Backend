@@ -32,7 +32,7 @@ const userOrderSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['Pending', 'Shipped', 'Delivered', 'Cancelled'],
+        enum: ['Pending', 'To Pickup', 'To Review'],
         default: 'Pending',
     },
 }, {

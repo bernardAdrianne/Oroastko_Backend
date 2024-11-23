@@ -16,7 +16,7 @@ export const addtoCart = async (req, res) => {
             return res.status(400).json({ success: false, message: "Insufficient stock available." });
         }
 
-        let userCart = await UserCart.findOne({ userId });
+        let userCart = await UserCart.findOne({ user: userId });
         if (!userCart) {
             userCart = new UserCart({
                 user: userId,
@@ -42,7 +42,7 @@ export const addtoCart = async (req, res) => {
 export const updateItem = async (req, res) => {
     try {
         const { productId, newQuantity } = req.body;
-        const userId = req.user.userId; // Access userId from the decoded token in req.user
+        const userId = req.user.userId; 
 
         if (newQuantity <= 0) return res.status(400).json({ success: false, message: "Quantity must be greater than 0." });
 
@@ -50,7 +50,7 @@ export const updateItem = async (req, res) => {
         if (!product) return res.status(404).json({ success: false, message: "Product not found." });
         if (product.stock_quantity < newQuantity) return res.status(400).json({ success: false, message: "Insufficient stock available." });
 
-        const userCart = await UserCart.findOne({ userId });
+        const userCart = await UserCart.findOne({ user: userId });
         if (!userCart) return res.status(404).json({ success: false, message: "Cart not found." });
 
         const existingCartItem = userCart.items.find(item => item.product.toString() === productId);
@@ -69,9 +69,9 @@ export const updateItem = async (req, res) => {
 export const deleteItemtoCart = async (req, res) => {
     try {
         const { productId } = req.body;
-        const userId = req.user.userId; // Access userId from the decoded token in req.user
+        const userId = req.user.userId; 
 
-        const userCart = await UserCart.findOne({ userId });
+        const userCart = await UserCart.findOne({ user: userId });
         if (!userCart) return res.status(404).json({ success: false, message: "Cart not found." });
 
         const itemIndex = userCart.items.findIndex(item => item.product.toString() === productId);
@@ -89,9 +89,9 @@ export const deleteItemtoCart = async (req, res) => {
 
 export const viewCart = async (req, res) => {
     try {
-        const userId = req.user.userId; // Access userId from the decoded token in req.user
+        const userId = req.user.userId;
 
-        const userCart = await UserCart.findOne({ userId }).populate('items.product');
+        const userCart = await UserCart.findOne({ user: userId }).populate('items.product');
         if (!userCart || userCart.items.length === 0) {
             return res.status(404).json({ success: false, message: "No items found in your cart." });
         }
