@@ -2,6 +2,7 @@ import Product from '../../models/product.model.js';
 import Category from '../../models/admin/admin.category.model.js';
 
 
+//CUSTOMER DISPLAY PRODUCTS FOR HOMEPAGE
 export const viewProducts = async (req, res) => {    
     try {
         const products = await Product.find({});
@@ -17,6 +18,7 @@ export const viewProducts = async (req, res) => {
     }
 };
 
+//CUSTOMER VIEW PRODUCT WHEN THE PRODUCT IS CLICKED
 export const viewProduct = async (req, res) => {
     try {
         const { productId } = req.params;
@@ -35,6 +37,7 @@ export const viewProduct = async (req, res) => {
     }
 };
 
+//CUSTOMER SEARCH FOR AN SPECIFIC PRODUCT
 export const searchProduct = async (req, res) => {
     const { searchTerm } = req.query;
     if (!searchTerm) {
@@ -57,6 +60,7 @@ export const searchProduct = async (req, res) => {
     }
 };
 
+//CUSTOMER FILTER PRODUCTS (MAX PRICE, MIN PRICE, CATEGORY NAME)
 export const filterProduct = async (req, res) => {     
     const { name, maxPrice, minPrice, category: categoryName } = req.query;
     const filter = {};

@@ -1,12 +1,15 @@
 // ADMIN USER MANAGEMENT ROUTES
 
 import express from 'express';
+import { getOrders, orderStatus, deleteOrder } from '../../controllers/admin/admin.orders.controller.js';
+import { verifyAdminRole } from '../../middleware/verifyAdminRole.js';
+import { confirmAuthToken } from '../../middleware/confirmAuth.js';
 
 const router = express.Router();
 
 // Admin Order Management
-router.get("/orders", getOrders);
-router.put("/orders/:id/status", orderStatus);
-router.delete("/orders/:id", deleteOrder);
+router.get("/customerOrders", confirmAuthToken, verifyAdminRole, getOrders);
+router.put("/updateOrder/:id/status", confirmAuthToken, verifyAdminRole, orderStatus);
+router.delete("/deleteOrder/:id", confirmAuthToken, verifyAdminRole, deleteOrder);
 
 export default router;

@@ -46,6 +46,7 @@ const validatePhoneNumber = (phone) => {
     return regex.test(phone);
 };
 
+//CUSTOMER REGISTRATION
 export const registerUser = async (req, res) => {
     const { username, email, password } = req.body;
     
@@ -86,6 +87,7 @@ export const registerUser = async (req, res) => {
     }
 };
 
+//CUSTOMER LOGIN
 export const loginUser = async (req, res) => {
     const { email, password } = req.body;
 
@@ -127,6 +129,7 @@ export const loginUser = async (req, res) => {
     }
 };
 
+//CUSTOMER LOGOUT
 export const logoutUser = async (req, res) => {
     try {
         const authHeader = req.headers['authorization'];
@@ -145,6 +148,7 @@ export const logoutUser = async (req, res) => {
     }
 };
 
+//CUSTOMER VIEW PROFILE
 export const getProfile = async (req, res) => {
     try {
         const user = await User.findById(req.user.userId).select('-password -role');
@@ -159,6 +163,7 @@ export const getProfile = async (req, res) => {
     }
 };
 
+//CUSTOMER EDIT AND UPDATE PROFILE
 export const updateProfile = async (req, res) => {
     try {
         const { username, address, phoneNumber, userImage, password } = req.body;

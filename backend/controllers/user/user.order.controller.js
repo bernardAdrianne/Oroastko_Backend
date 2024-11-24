@@ -1,6 +1,8 @@
 import UserCart from "../../models/user.cart.model.js";
 import UserOrder from "../../models/user.order.model.js";
 
+
+//CUSTOMER PLACE ORDER IN CART, WHEN THE ITEM IN CART HAS BEEN PLACE ORDERED IT WILL AUTOMATICALLY DELETED
 export const placeOrder = async (req, res) => {
     try {
         const userId = req.user.userId;
@@ -33,10 +35,10 @@ export const placeOrder = async (req, res) => {
     }
 };
 
+//CUSTOMER ALL ORDERS HISTORY
 export const myOrders = async (req, res) => {
     try {
         const userId = req.user.userId;
-
         const orders = await UserOrder.find({ user: userId }).populate('items.product');
         
         if (!orders || orders.length === 0) {
@@ -50,6 +52,7 @@ export const myOrders = async (req, res) => {
     }
 };  
 
+//CUSTOMER VIEW SPECIFIC ORDER
 export const myOrder = async (req, res) => {
     try {
         const orderId = req.params.id;
@@ -63,6 +66,24 @@ export const myOrder = async (req, res) => {
         return res.status(201).json({ success: true, data: order });
     } catch (error) {
         console.error("error fetching order: ", error.message);
+        return res.status(500).json({ success: false, message: "Server error" });
+    }
+};
+
+//CUSTOMER DELETE COMPLETED ORDERS
+export const deleteOrder = async (req, res) => {
+    try {
+        const orderId = req.params.id; 
+        
+        const deletedOrder = await UserOrder.findByIdAndDelete(orderId);
+
+        if (!deletedOrder) {
+            return res.status(404).json({ success: false, message: "Order not found." });
+        }
+
+        return res.status(200).json({ success: true, message: "Order deleted successfully." });
+    } catch (error) {
+        console.error("Error deleting order: ", error.message);
         return res.status(500).json({ success: false, message: "Server error" });
     }
 };

@@ -13,6 +13,7 @@ import adminRoutes from './routes/admin route/admin.route.js';
 import productRoutes from "./routes/admin route/product.route.js";
 import categoryRoutes from './routes/admin route/admin.category.route.js'
 import viewUsers from './routes/admin route/admin.user.route.js'
+import orderRoutes from './routes/admin route/admin.order.route.js';
 
 import userRoutes from './routes/user route/user.route.js'; 
 import userProductBrowsing from './routes/user route/user.product.browsing.route.js';
@@ -43,6 +44,7 @@ app.use("/oroastko/admin", adminRoutes);
 app.use("/oroastko/admin/products", productRoutes);
 app.use("/oroastko/admin/category", categoryRoutes);
 app.use("/oroastko/admin/mycustomer", viewUsers);
+app.use("/oroastko/admin/orderTransaction", orderRoutes);
 
 //Admin login render
 app.get('/oroastko/admin/login', (req, res) => {

@@ -2,6 +2,7 @@ import UserCart from '../../models/user.cart.model.js';
 import Product from '../../models/product.model.js';
 
 
+//CUsTOMER ADD TO CART
 export const addtoCart = async (req, res) => {
     try {
         const { productId, quantity } = req.body;
@@ -39,6 +40,7 @@ export const addtoCart = async (req, res) => {
     }
 };
 
+//CUSTOMER UPDATE ITEM IN CART (QUANTITY)
 export const updateItem = async (req, res) => {
     try {
         const { productId, newQuantity } = req.body;
@@ -66,6 +68,7 @@ export const updateItem = async (req, res) => {
     }
 };
 
+//CUSTOMER DELETE ITEM TO CART
 export const deleteItemtoCart = async (req, res) => {
     try {
         const { productId } = req.body;
@@ -87,6 +90,7 @@ export const deleteItemtoCart = async (req, res) => {
     }
 };
 
+//CUSTOMER VIEW ITEMS IN CART
 export const viewCart = async (req, res) => {
     try {
         const userId = req.user.userId;
