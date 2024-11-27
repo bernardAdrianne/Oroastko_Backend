@@ -46,6 +46,7 @@ const validatePhoneNumber = (phone) => {
     return regex.test(phone);
 };
 
+//ADMIN REGISTRATION
 export const registerAdmin = async (req, res) => {
     const { name, email, password } = req.body;
 
@@ -86,6 +87,7 @@ export const registerAdmin = async (req, res) => {
     }
 };
 
+//ADMIn LOGIN
 export const loginAdmin = async (req, res) => {
     const { email, password } = req.body;
 
@@ -127,6 +129,7 @@ export const loginAdmin = async (req, res) => {
     }
 };
 
+//ADMIN LOGOUT
 export const logoutAdmin = async (req,res) => {
     try {
         const authHeader = req.headers['authorization'];
@@ -145,6 +148,7 @@ export const logoutAdmin = async (req,res) => {
     }
 };  
 
+//ADMIN VIEW PROFILE
 export const getAdminProfile = async (req, res) => {
     try {
         const admin = await AdminUser.findById(req.admin.id).select('-password');
@@ -159,6 +163,7 @@ export const getAdminProfile = async (req, res) => {
     }
 };
 
+//ADMIN EDIT AND UPDATE PROFILE
 export const updateAdminProfile = async (req, res) => {
     try {
         const { name, phoneNumber, adminImage, password } = req.body;

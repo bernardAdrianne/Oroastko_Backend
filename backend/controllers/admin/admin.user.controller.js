@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import User from '../../models/user.model.js';
 
 
+//ADMIN VIEW ALL EXISTING CUSTOMERS
 export const viewUsers = async (req,res) => {
     try {
         const myUsers = await User.find().select('-password -email -role');
@@ -17,6 +18,7 @@ export const viewUsers = async (req,res) => {
     }
 };
 
+//ADMIN VIEW SPECIFIC CUSTOMER
 export const viewUser = async (req,res) => {
     const { id } = req.params;
 
@@ -38,6 +40,7 @@ export const viewUser = async (req,res) => {
     }
 };
 
+//PENDING
 export const deleteUser = async (req,res) => {
     
 };

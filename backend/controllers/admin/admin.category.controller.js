@@ -3,6 +3,7 @@ import Category from '../../models/admin/admin.category.model.js';
 import Product from '../../models/product.model.js';
 
 
+//ADMIN VIEW ALL CATEGORIES
 export const viewCategories = async (req, res) => {
     try {
         const categories = await Category.find({});
@@ -13,6 +14,7 @@ export const viewCategories = async (req, res) => {
     }
 };
 
+//ADMIN VIEW sPECIFIC CATEGORY
 export const viewCategory = async (req, res) => {
     const { id } = req.params;
 
@@ -34,6 +36,7 @@ export const viewCategory = async (req, res) => {
     }
 };
 
+//ADMIN ADD NEW CATEGORY
 export const addCategory =  async (req, res) => {
     const { categoryName } = req.body;
     if (!categoryName) return res.status(400).json({ success: false, message: "Please provide the category name." });
@@ -48,6 +51,7 @@ export const addCategory =  async (req, res) => {
     }
 };
 
+//ADMIN EDIT AND UPDATE CATEGORY
 export const updateCategory = async (req, res) => {
     const { id } = req.params;
     const { categoryName } = req.body;
@@ -70,6 +74,7 @@ export const updateCategory = async (req, res) => {
     }
 };
 
+//ADMIN DELETE CATEGORY
 export const deleteCategory = async (req, res) => {
     const { id } = req.params;
 

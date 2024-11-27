@@ -30,9 +30,9 @@ const userOrderSchema = new mongoose.Schema({
         type: Number,
         required: true,
     },
-    status: {
+    userStatus: {
         type: String,
-        enum: ['Pending', 'To Pickup', 'To Review'],
+        enum: ['Pending', 'Order Confirmed', 'Preparing', 'Order Recieved'],
         default: 'Pending',
     },
 }, {

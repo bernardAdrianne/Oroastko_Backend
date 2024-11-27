@@ -1,11 +1,12 @@
 import mongoose from 'mongoose';
 import Product from '../../models/product.model.js';
 import Category from '../../models/admin/admin.category.model.js';
+import ProductImage from '../../models/admin/image.model.js';
 
-
+//ADMIN VIEW ALL PRODUCTS
 export const getProducts = async (req, res) => {
     try {
-        const products = await Product.find({}).select('name price stock_quantity category');
+        const products = await Product.find({}).select('name price stock_quantity category').populate('category', 'name');
         return res.status(200).json({ success: true, data: products });
     } catch (error) {
         console.error("Error fetching products:", error.message);
@@ -13,6 +14,7 @@ export const getProducts = async (req, res) => {
     }
 };
 
+//ADMIN VIEW SPECIFIC PRODUCT
 export const getViewProduct = async (req, res) => {
     const { id } = req.params;
 
@@ -21,7 +23,7 @@ export const getViewProduct = async (req, res) => {
     }
 
     try {
-        const product = await Product.findById(id).select('name price stock_quantity image');
+        const product = await Product.findById(id).select('name price stock_quantity image').populate('category', 'name');
         if (!product) {
             return res.status(404).json({ success: false, message: "Product not found." });
         }
@@ -32,6 +34,7 @@ export const getViewProduct = async (req, res) => {
     }
 };
 
+//ADMIN CREATE NEW PRODUCT
 export const createProduct = async (req, res) => {
     const { name, price, stock_quantity, image, category } = req.body;
 
@@ -49,6 +52,11 @@ export const createProduct = async (req, res) => {
             categoryId = categoryDoc._id;
         }
 
+        const validImage = await ProductImage.findOne({ productImage: image });
+        if (!validImage) {
+            return res.status(404).json({ success: false, message: "Invalid image URL." });
+        }
+
         const newProduct = new Product({ name, price, stock_quantity, image, category: categoryId });
         await newProduct.save();
         return res.status(201).json({ success: true, message: "Product added successfully.", data: newProduct });
@@ -58,17 +66,24 @@ export const createProduct = async (req, res) => {
     }
 };
 
+//ADMIN EDIT AND UPDATE PRODUCT
 export const updateProduct = async (req, res) => {
     const { id } = req.params;
-
-    const product = req.body;
+    const { image } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
-        return res.status(404).json({ success: false, message: "Invalid Product Id." }); 
+        return res.status(404).json({ success: false, message: "Invalid Product Id." });
     }
 
     try {
-        const updatedProduct = await Product.findByIdAndUpdate(id, product, { new: true });
+        if (image) {
+            const validImage = await ProductImage.findOne({ productImage: image });
+            if (!validImage) {
+                return res.status(404).json({ success: false, message: "Invalid image URL." });
+            }
+        }
+
+        const updatedProduct = await Product.findByIdAndUpdate(id, req.body, { new: true });
         return res.status(200).json({ success: true, data: updatedProduct });
     } catch (error) {
         console.error("Error updating product:", error.message);
@@ -76,6 +91,7 @@ export const updateProduct = async (req, res) => {
     }
 };
 
+//ADMIN DELETE PRODUCT
 export const deleteProduct = async (req, res) => { 
     const { id } = req.params;
 
