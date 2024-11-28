@@ -6,7 +6,7 @@ import Product from '../../models/product.model.js';
 //ADMIN VIEW ALL CATEGORIES
 export const viewCategories = async (req, res) => {
     try {
-        const categories = await Category.find({});
+        const categories = await Category.find({}).select('categoryName');
         return res.status(200).json({ success: true, data: categories || [] });
     } catch (error) {
         console.error("Error fetching all categories:", error.message);
@@ -23,7 +23,7 @@ export const viewCategory = async (req, res) => {
     }
 
     try {
-        const category = await Category.findById(id);
+        const category = await Category.findById(id).select('categoryName');
         if (!category) {
             return res.status(404).json({ success: false, message: "Category not found." });
         }
