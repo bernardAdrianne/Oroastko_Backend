@@ -11,22 +11,18 @@ const productSchema = new mongoose.Schema({
         type: Number,   
         required: true,
     },
-    stock_quantity: {
-        type: Number,
-        required: true,
-    },
     image: {
         type: String,
         required: true,
     },
     category: {
         type: mongoose.Schema.Types.ObjectId,
-        reference: 'Category',
+        ref: 'Category',
         required: true,
     },
 },  
     {
-        timestamps: true, //createdAt, updatedAt
+        timestamps: true,
     }
 );
 

@@ -14,10 +14,6 @@ const adminOrderSchema = new mongoose.Schema({
             ref: 'Product',
             required: true,
         },
-        stock_quantity: {
-            type: Number,
-            required: true,
-        },
         price: {
             type: Number,
             required: true,
