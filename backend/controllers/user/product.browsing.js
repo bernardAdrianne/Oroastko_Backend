@@ -5,7 +5,7 @@ import Category from '../../models/admin/admin.category.model.js';
 //CUSTOMER DISPLAY PRODUCTS FOR HOMEPAGE
 export const viewProducts = async (req, res) => {    
     try {
-        const products = await Product.find({});
+        const products = await Product.find({}).populate('category', 'categoryName');
         
         if (!products.length) {
             return res.status(404).json({ success: true, message: "No products found." });
@@ -23,7 +23,7 @@ export const viewProduct = async (req, res) => {
     try {
         const { productId } = req.params;
 
-        const product = await Product.findById(productId);
+        const product = await Product.findById(productId).populate('category', 'categoryName');
 
         if (!product) {
             console.log("Product not found for productId: ", productId);
