@@ -1,5 +1,6 @@
 import UserCart from "../../models/user.cart.model.js";
 import UserOrder from "../../models/user.order.model.js";
+import AdminOrder from '../../models/admin/admin.order.model.js';
 
 
 //CUSTOMER PLACE ORDER IN CART, WHEN THE ITEM IN CART HAS BEEN PLACE ORDERED IT WILL AUTOMATICALLY DELETED
@@ -12,9 +13,13 @@ export const placeOrder = async (req, res) => {
             return res.status(400).json({ success: false, message: "Your cart is empty." });
         }
 
-        const totalAmount = userCart.items.reduce((total, item) => total + item.quantity * item.product.price, 0);
+        const totalAmount = userCart.items.reduce(
+            (total, item) => total + item.quantity * item.product.price,
+            0
+        );
 
-        const newOrder = new UserOrder({
+        // Create UserOrder
+        const userOrder = new UserOrder({
             user: userId,
             items: userCart.items.map(item => ({
                 product: item.product._id,
@@ -22,16 +27,29 @@ export const placeOrder = async (req, res) => {
                 price: item.product.price,
             })),
             totalAmount,
+            userStatus: 'Pending',
         });
+        await userOrder.save();
 
-        await newOrder.save();
+        // Create AdminOrder
+        const adminOrder = new AdminOrder({
+            user: userId,
+            items: userCart.items.map(item => ({
+                product: item.product._id,
+                price: item.product.price,
+            })),
+            totalAmount,
+            orderStatus: 'Pending',
+        });
+        await adminOrder.save();
 
+        // Clear user cart
         await UserCart.findOneAndUpdate({ user: userId }, { items: [] });
 
-        return res.status(201).json({ success: true, message: "Order placed successfully.", order: newOrder });
+        return res.status(201).json({ success: true, message: "Order placed successfully.", order: userOrder });
     } catch (error) {
         console.error("Error placing order: ", error.message);
-        return res.status(500).json({ success: false, message: "Server error" });
+        return res.status(500).json({ success: false, message: "Server error." });
     }
 };
 

@@ -1,5 +1,4 @@
 import ProductImage from "../../models/admin/image.model.js";
-import path from 'path';
 
 //ADMIN ADD NEW IMAGE
 export const addImage = async (req, res) => {

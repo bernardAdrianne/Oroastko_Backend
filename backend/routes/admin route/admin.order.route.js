@@ -10,7 +10,7 @@ const router = express.Router();
 // Admin Order Management
 router.get("/customersOrders", confirmAuthToken, verifyAdminRole, getOrders);
 router.get("/customerOrder/:id", confirmAuthToken, verifyAdminRole, viewOrder);
-router.put("/updateOrder/:id/status", confirmAuthToken, verifyAdminRole, orderStatus);
+router.put("/updateOrder/:id", confirmAuthToken, verifyAdminRole, orderStatus);
 router.delete("/deleteOrder/:id", confirmAuthToken, verifyAdminRole, deleteOrder);
 
 export default router;

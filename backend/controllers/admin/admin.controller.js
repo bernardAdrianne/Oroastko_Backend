@@ -1,5 +1,5 @@
 import AdminUser from '../../models/admin/admin.user.model.js';
-import bcrypt from 'bcrypt';
+// import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import Blacklist from '../../models/blacklist/blacklist.model.js';
 import crypto from 'crypto';
@@ -70,14 +70,13 @@ export const registerAdmin = async (req, res) => {
 
         // const saltRounds = 10;
         // const hashedPassword = await bcrypt.hash(password, saltRounds);
-
         const newAdmin = new AdminUser({ 
             name, 
             email,
             password: encryptedData,
             iv: iv,
         });
-        
+  
         await newAdmin.save();
 
         return res.status(201).json({ success: true, message: "Admin registered successfully." });
@@ -113,7 +112,7 @@ export const loginAdmin = async (req, res) => {
         if (password !== decryptedPassword) {
             return res.status(401).json({ success: false, message: "Invalid credentials." });
         }
-
+        // console.log(decryptedPassword);
         const token = jwt.sign({ id: admin._id, email: admin.email, role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
         res.cookie('authToken', token, {
