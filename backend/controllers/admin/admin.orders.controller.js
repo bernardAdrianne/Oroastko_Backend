@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import AdminOrder from '../../models/admin/admin.order.model.js';
+import UserOrder from '../../models/user.order.model.js';
 
 //ADMIN VIEW ALL ORDERS
 export const getOrders = async (req, res) => {
@@ -45,7 +46,7 @@ export const viewOrder = async (req, res) => {
 //ADMIN UPDATE ORDER STATUS
 export const orderStatus = async (req, res) => {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status } = req.body; 
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
         return res.status(400).json({ success: false, message: "Invalid order ID." });
@@ -57,20 +58,31 @@ export const orderStatus = async (req, res) => {
     }
 
     try {
-        const updatedOrder = await AdminOrder.findByIdAndUpdate(
+        const adminOrder = await AdminOrder.findByIdAndUpdate(
             id,
-            { adminStatus: status },
+            { orderStatus: status },
             { new: true }
         );
 
-        if (!updatedOrder) {
-            return res.status(404).json({ success: false, message: "Order not found." });
+        if (!adminOrder) {
+            return res.status(404).json({ success: false, message: "Admin order not found." });
+        }
+
+        const userOrder = await UserOrder.findOneAndUpdate(
+            { user: adminOrder.user, totalAmount: adminOrder.totalAmount }, 
+            { userStatus: status }, // Update userStatus
+            { new: true }
+        );
+
+        if (!userOrder) {
+            console.warn(`No corresponding UserOrder found for AdminOrder with ID: ${id}`);
         }
 
         return res.status(200).json({
             success: true,
             message: "Order status updated successfully.",
-            data: updatedOrder,
+            adminOrder,
+            userOrder: userOrder || null,
         });
     } catch (error) {
         console.error("Error updating order status:", error.message);
