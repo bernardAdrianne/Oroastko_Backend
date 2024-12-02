@@ -52,7 +52,7 @@ export const orderStatus = async (req, res) => {
         return res.status(400).json({ success: false, message: "Invalid order ID." });
     }
 
-    const validStatuses = ['Pending', 'Order Confirmed', 'Preparing', 'Order Received'];
+    const validStatuses = ['Pending', 'Order Confirmed', 'Preparing', 'Received'];
     if (!validStatuses.includes(status)) {
         return res.status(400).json({ success: false, message: "Invalid order status." });
     }
@@ -70,7 +70,7 @@ export const orderStatus = async (req, res) => {
 
         const userOrder = await UserOrder.findOneAndUpdate(
             { user: adminOrder.user, totalAmount: adminOrder.totalAmount }, 
-            { userStatus: status }, // Update userStatus
+            { userStatus: status },
             { new: true }
         );
 
@@ -78,12 +78,7 @@ export const orderStatus = async (req, res) => {
             console.warn(`No corresponding UserOrder found for AdminOrder with ID: ${id}`);
         }
 
-        return res.status(200).json({
-            success: true,
-            message: "Order status updated successfully.",
-            adminOrder,
-            userOrder: userOrder || null,
-        });
+        return res.status(200).json({ success: true, message: "Order status updated successfully.", data: adminOrder });
     } catch (error) {
         console.error("Error updating order status:", error.message);
         return res.status(500).json({ success: false, message: "Server error." });

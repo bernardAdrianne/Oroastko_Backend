@@ -3,25 +3,38 @@ import UserOrder from "../../models/user.order.model.js";
 import AdminOrder from '../../models/admin/admin.order.model.js';
 
 
-//CUSTOMER PLACE ORDER IN CART, WHEN THE ITEM IN CART HAS BEEN PLACE ORDERED IT WILL AUTOMATICALLY DELETED
+//CUSTOMER PLACE ORDER IN CART
 export const placeOrder = async (req, res) => {
     try {
         const userId = req.user.userId;
+        const { selectedItems } = req.body;
+
+        if (!Array.isArray(selectedItems) || selectedItems.length === 0) {
+            return res.status(400).json({ success: false, message: "No items selected for order." });
+        }
+
         const userCart = await UserCart.findOne({ user: userId }).populate('items.product');
 
         if (!userCart || userCart.items.length === 0) {
             return res.status(400).json({ success: false, message: "Your cart is empty." });
         }
 
-        const totalAmount = userCart.items.reduce(
+        const selectedCartItems = userCart.items.filter(item => 
+            selectedItems.includes(item.product._id.toString())
+        );
+
+        if (selectedCartItems.length === 0) {
+            return res.status(400).json({ success: false, message: "Selected items not found in cart." });
+        }
+
+        const totalAmount = selectedCartItems.reduce(
             (total, item) => total + item.quantity * item.product.price,
             0
         );
 
-        // Create UserOrder
         const userOrder = new UserOrder({
             user: userId,
-            items: userCart.items.map(item => ({
+            items: selectedCartItems.map(item => ({
                 product: item.product._id,
                 quantity: item.quantity,
                 price: item.product.price,
@@ -31,10 +44,9 @@ export const placeOrder = async (req, res) => {
         });
         await userOrder.save();
 
-        // Create AdminOrder
         const adminOrder = new AdminOrder({
             user: userId,
-            items: userCart.items.map(item => ({
+            items: selectedCartItems.map(item => ({
                 product: item.product._id,
                 price: item.product.price,
             })),
@@ -43,10 +55,16 @@ export const placeOrder = async (req, res) => {
         });
         await adminOrder.save();
 
-        // Clear user cart
-        await UserCart.findOneAndUpdate({ user: userId }, { items: [] });
+        userCart.items = userCart.items.filter(item => 
+            !selectedItems.includes(item.product._id.toString())
+        );
+        await userCart.save();
 
-        return res.status(201).json({ success: true, message: "Order placed successfully.", order: userOrder });
+        return res.status(201).json({ 
+            success: true, 
+            message: "Order placed successfully.", 
+            order: userOrder 
+        });
     } catch (error) {
         console.error("Error placing order: ", error.message);
         return res.status(500).json({ success: false, message: "Server error." });
