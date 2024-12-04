@@ -113,12 +113,12 @@ export const loginAdmin = async (req, res) => {
             return res.status(401).json({ success: false, message: "Invalid credentials." });
         }
         // console.log(decryptedPassword);
-        const token = jwt.sign({ id: admin._id, email: admin.email, role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ id: admin._id, email: admin.email, role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
         res.cookie('authToken', token, {
             httpOnly: true,
             secure: process.env.MODE_ENV === 'production',
-            maxAge: 60 * 60 * 1000 
+            maxAge: 7 * 24 * 60 * 60 * 1000,
         });
 
         return res.status(200).json({ success: true, message: "Logged in successfully.", token });

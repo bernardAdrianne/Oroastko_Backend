@@ -25,7 +25,7 @@ const adminOrderSchema = new mongoose.Schema({
     },
     orderStatus: {
         type: String,
-        enum: ['Pending', 'Order Confirmed', 'Preparing', 'Recieved'],
+        enum: ['Pending', 'Order Confirmed', 'Preparing', 'Received'],
         default: 'Pending',
     },
     managedBy: {

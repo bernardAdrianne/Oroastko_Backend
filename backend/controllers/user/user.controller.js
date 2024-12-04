@@ -114,12 +114,12 @@ export const loginUser = async (req, res) => {
             return res.status(401).json({ success: false, message: "Invalid credentials." });
         }
 
-        const token = jwt.sign({ userId: user._id, email: user.email, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ userId: user._id, email: user.email, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
         res.cookie('authToken', token, {
             httpOnly: true,
             secure: process.env.MODE_ENV === 'production',
-            maxAge: 60 * 60 * 1000 
+            maxAge: 7 * 24 * 60 * 60 * 1000, 
         });
 
         return res.status(200).json({ success: true, message: "Logged in successfully.", token });
@@ -166,7 +166,7 @@ export const getProfile = async (req, res) => {
 //CUSTOMER EDIT AND UPDATE PROFILE
 export const updateProfile = async (req, res) => {
     try {
-        const { username, address, phoneNumber, userImage, password } = req.body;
+        const { username, fullName, address, phoneNumber, userImage, password } = req.body;
         const userId = req.user.userId;
 
         if (phoneNumber && !validatePhoneNumber(phoneNumber)) {
@@ -178,6 +178,7 @@ export const updateProfile = async (req, res) => {
 
         const updateData = {};
         if (username) updateData.username = username;
+        if (fullName) updateData.fullName = fullName;
         if (address) updateData.address = address;
         if (phoneNumber) updateData.phoneNumber = phoneNumber;
         if (userImage) updateData.userImage = userImage;

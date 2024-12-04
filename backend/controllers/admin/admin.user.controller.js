@@ -33,7 +33,7 @@ export const viewUser = async (req,res) => {
             return res.status(404).json({ success: false, message: "Customer not found." });
         }
 
-        return res.status(200).json({ succes: true, data: myUser });
+        return res.status(200).json({ success: true, data: myUser });
     } catch (error) {
         console.error("Error fetching customer:", error.message);
         return res.status(500).json({ success: false, message: "Server error" });

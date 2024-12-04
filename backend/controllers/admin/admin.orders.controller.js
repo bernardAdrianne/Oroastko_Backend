@@ -5,9 +5,10 @@ import UserOrder from '../../models/user.order.model.js';
 //ADMIN VIEW ALL ORDERS
 export const getOrders = async (req, res) => {
     try {
-        const orders = await AdminOrder.find() 
-            .populate('user', 'fullname')
+        const orders = await AdminOrder.find()
+            .populate('user', 'fullName')
             .populate('items.product', 'name price');
+
 
         if (!orders || orders.length === 0) {
             return res.status(404).json({ success: false, message: "No orders found." });
