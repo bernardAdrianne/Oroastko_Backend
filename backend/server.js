@@ -40,7 +40,7 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(path.join(path.resolve(), 'uploads')));
 
 //Admin routes
 app.use("/oroastko/admin", adminRoutes);
