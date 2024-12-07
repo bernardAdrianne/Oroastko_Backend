@@ -40,6 +40,8 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 //Admin routes
 app.use("/oroastko/admin", adminRoutes);
 app.use("/oroastko/admin/products", productRoutes);
@@ -47,7 +49,7 @@ app.use("/oroastko/admin/category", categoryRoutes);
 app.use("/oroastko/admin/mycustomer", viewUsers);
 app.use("/oroastko/admin/orders", orderRoutes);
 app.use("/oroastko/admin/image", imageRoutes);
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 
 //Admin login render
 app.get('/oroastko/admin/login', (req, res) => {
