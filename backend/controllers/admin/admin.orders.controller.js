@@ -6,7 +6,7 @@ import UserOrder from '../../models/user.order.model.js';
 export const getOrders = async (req, res) => {
     try {
         const orders = await AdminOrder.find()
-            .populate('user', 'fullName')
+            .populate('user')
             .populate('items.product', 'name price');
 
 
@@ -30,7 +30,7 @@ export const viewOrder = async (req, res) => {
     }
     try {
         const order = await AdminOrder.findById(id)
-            .populate('user', 'fullname')
+            .populate('user')
             .populate('items.product', 'name totalAmount');
 
         if (!order) {
