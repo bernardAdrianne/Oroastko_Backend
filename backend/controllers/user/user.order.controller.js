@@ -49,6 +49,7 @@ export const placeOrder = async (req, res) => {
             items: selectedCartItems.map(item => ({
                 product: item.product._id,
                 price: item.product.price,
+                quantity: item.quantity,
             })),
             totalAmount,
             orderStatus: 'Pending',
@@ -93,7 +94,7 @@ export const myOrder = async (req, res) => {
     try {
         const orderId = req.params.id;
 
-        const order = await UserOrder.findById(orderId).populate('items.product', 'name price totalAmount image');
+        const order = await UserOrder.findById(orderId).populate('items.product', 'name price image');
 
         if (!order) {
             return res.status(404).json({ success: false, message: "Order not found" });
