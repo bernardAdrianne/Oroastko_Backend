@@ -6,8 +6,8 @@ import UserOrder from '../../models/user.order.model.js';
 export const getOrders = async (req, res) => {
     try {
         const orders = await AdminOrder.find()
-            .populate('user')
-            .populate('items.product', 'name price');
+            .populate('user', 'fullname username')
+            .populate('items.product', 'name price image');
 
 
         if (!orders || orders.length === 0) {
@@ -30,8 +30,8 @@ export const viewOrder = async (req, res) => {
     }
     try {
         const order = await AdminOrder.findById(id)
-            .populate('user')
-            .populate('items.product', 'name totalAmount');
+            .populate('user', 'fullname username')
+            .populate('items.product', 'name totalAmount image');
 
         if (!order) {
             return res.status(404).json({ success: false, message: "Order not found." });
