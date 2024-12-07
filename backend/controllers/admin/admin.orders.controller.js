@@ -6,9 +6,9 @@ import UserOrder from '../../models/user.order.model.js';
 export const getOrders = async (req, res) => {
     try {
         const orders = await AdminOrder.find()
-            .populate('user', 'fullname username')
-            .populate('items.product', 'name price image')
-            .select('items.quantity');
+            .populate('user', 'fullname username')  // Populating user details
+            .populate('items.product', 'name price image')  // Populating product details
+            .select('items.quantity totalAmount orderStatus createdAt')  // Include the quantity, totalAmount, orderStatus, and createdAt fields
 
         if (!orders || orders.length === 0) {
             return res.status(404).json({ success: false, message: "No orders found." });
@@ -23,27 +23,28 @@ export const getOrders = async (req, res) => {
 
 //ADMIN VIEW SPECIFIC ORDER
 export const viewOrder = async (req, res) => {
-    const { id } = req.params
+    const { id } = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
         return res.status(400).json({ success: false, message: "Invalid order ID." });
     }
     try {
         const order = await AdminOrder.findById(id)
-            .populate('user', 'fullname username')
-            .populate('items.product', 'name totalAmount image')
-            .select('items.quantity');
+            .populate('user', 'fullname username')  // Populating user details
+            .populate('items.product', 'name price image')  // Populating product details
+            .select('items.quantity totalAmount orderStatus createdAt');  // Include the quantity, totalAmount, orderStatus, and createdAt fields
 
         if (!order) {
             return res.status(404).json({ success: false, message: "Order not found." });
         }
 
-        return res.status(200).json({ success: false, data: order})
+        return res.status(200).json({ success: true, data: order });
     } catch (error) {
         console.error("Error fetching customer order: ", error.message);
         return res.status(500).json({ success: false, message: "Server error" });
     }
 };
+
 
 //ADMIN UPDATE ORDER STATUS
 export const orderStatus = async (req, res) => {
