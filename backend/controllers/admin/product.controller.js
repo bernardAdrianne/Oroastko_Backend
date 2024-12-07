@@ -7,7 +7,6 @@ import ProductImage from '../../models/admin/image.model.js';
 export const getProducts = async (req, res) => {
     try {
         const products = await Product.find({})
-            .select('name price category')
             .populate('category', 'categoryName');
         return res.status(200).json({ success: true, data: products });
     } catch (error) {
