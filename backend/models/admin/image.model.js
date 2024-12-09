@@ -4,14 +4,14 @@ import mongoose from "mongoose";
 
 const imageSchema = new mongoose.Schema ({
     productImage: {
-        type: String,
-        required: false,
+        data: Buffer,
+        contentType: String,
     },
 },  {
     timestamps: true,
 });
 
 
-const ProductImage = mongoose.model('ProductImage', imageSchema, 'admin_image');
+const ProductImage = mongoose.model('ProductImage', imageSchema);
 
 export default ProductImage;
