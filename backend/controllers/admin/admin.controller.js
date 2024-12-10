@@ -197,3 +197,46 @@ export const updateAdminProfile = async (req, res) => {
         return res.status(500).json({ success: false, message: "Server error" });
     }
 };
+
+import AdminOrder from '../../models/admin/admin.order.model.js';
+
+export const getAdminAnalytics = async (req, res) => {
+    try {
+        const totalEarningsResult = await AdminOrder.aggregate([
+            { $match: { orderStatus: "Received" } },
+            { $group: { _id: null, total: { $sum: "$totalAmount" } } },
+        ]);
+        const totalEarnings = totalEarningsResult[0]?.total || 0;
+
+        const totalOrders = await AdminOrder.countDocuments();
+
+        const monthlyEarningsResult = await AdminOrder.aggregate([
+            { $match: { orderStatus: "Received" } },
+            {
+                $group: {
+                    _id: { month: { $month: "$createdAt" } },
+                    earnings: { $sum: "$totalAmount" },
+                },
+            },
+            { $sort: { "_id.month": 1 } },
+        ]);
+
+        const monthlyEarnings = Array.from({ length: 12 }, (_, i) => ({
+            month: i + 1,
+            earnings: 0,
+        }));
+
+        monthlyEarningsResult.forEach((entry) => {
+            monthlyEarnings[entry._id.month - 1].earnings = entry.earnings;
+        });
+
+        res.status(200).json({
+            totalEarnings,
+            totalOrders,
+            monthlyEarnings,
+        });
+    } catch (error) {
+        console.error("Error fetching analytics:", error.message);
+        res.status(500).json({ error: "Failed to fetch analytics data" });
+    }
+};
