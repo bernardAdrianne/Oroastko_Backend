@@ -240,3 +240,35 @@ export const getAdminAnalytics = async (req, res) => {
         res.status(500).json({ error: "Failed to fetch analytics data" });
     }
 };
+
+import Product from '../../models/product.model.js';
+export const getBestSellers = async (req, res) => {
+    try {
+        const bestSellersResult = await AdminOrder.aggregate([
+            { $unwind: "$items" }, 
+            { $group: { 
+                _id: "$items.product", 
+                totalSold: { $sum: "$items.quantity" },
+            }},
+            { $sort: { totalSold: -1 } }, 
+            { $limit: 10 }, // Get top 10 best sellers
+        ]);
+
+        // Map the product IDs to actual product data
+        const bestSellers = await Product.find({
+            '_id': { $in: bestSellersResult.map(item => item._id) }
+        }).select('name price image');
+
+        // Combine the best-selling product data with the quantities sold
+        const bestSellersWithQuantities = bestSellers.map(product => {
+            const totalSold = bestSellersResult.find(item => item._id.toString() === product._id.toString()).totalSold;
+            return { product, totalSold };
+        });
+
+        res.status(200).json({ bestSellers: bestSellersWithQuantities });
+    } catch (error) {
+        console.error("Error fetching best sellers:", error.message);
+        res.status(500).json({ error: "Failed to fetch best sellers." });
+    }
+};
+

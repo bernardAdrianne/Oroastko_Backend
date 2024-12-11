@@ -10,6 +10,15 @@ const analyticsSchema = new mongoose.Schema(
                 earnings: { type: Number, default: 0 },
             },
         ],
+        bestSellers: [
+            {
+                product: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: 'Product',
+                },
+                totalSold: { type: Number, default: 0 },
+            },
+        ],
     },
     { timestamps: true }
 );
