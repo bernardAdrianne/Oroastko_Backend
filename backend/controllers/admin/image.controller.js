@@ -1,6 +1,7 @@
 import ProductImage from "../../models/admin/image.model.js";
+import path from 'path';
 
-//ADMIN ADD NEW IMAGE
+// ADMIN ADD NEW IMAGE
 export const addImage = async (req, res) => {
     try {
         if (!req.file) {
@@ -8,7 +9,6 @@ export const addImage = async (req, res) => {
         }
 
         const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
-
         const newImage = new ProductImage({ productImage: imageUrl });
         await newImage.save();
 
@@ -19,7 +19,7 @@ export const addImage = async (req, res) => {
     }
 };
 
-//ADMIN VIEW ALL IMAGE
+// ADMIN VIEW ALL IMAGE
 export const getImage = async (req, res) => {
     try {
         const images = await ProductImage.find();
@@ -28,7 +28,12 @@ export const getImage = async (req, res) => {
             return res.status(404).json({ success: false, message: "No images found." });
         }
 
-        return res.status(200).json({ success: true, data: images });
+        const formattedImages = images.map(image => ({
+            id: image._id,
+            image: `http://localhost:5000/uploads/${path.basename(image.productImage)}`
+        }));
+
+        return res.status(200).json({ success: true, data: formattedImages });
     } catch (error) {
         console.error("Error fetching images: ", error.message);
         return res.status(500).json({ success: false, message: "Server error" });

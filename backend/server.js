@@ -20,6 +20,7 @@ import userRoutes from './routes/user route/user.route.js';
 import userProductBrowsing from './routes/user route/user.product.browsing.route.js';
 import userCart from './routes/user route/user.cart.route.js';
 import userOrder from './routes/user route/user.order.route.js';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
