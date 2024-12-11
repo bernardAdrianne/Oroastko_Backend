@@ -1,7 +1,7 @@
 // USER LOGIN AND REGISTRATION ROUTES
 
 import express from 'express';
-import { registerAdmin, loginAdmin, logoutAdmin, getAdminProfile, updateAdminProfile } from '../../controllers/admin/admin.controller.js';
+import { registerAdmin, loginAdmin, logoutAdmin, getAdminProfile, updateAdminProfile, getAdminAnalytics, getBestSellers } from '../../controllers/admin/admin.controller.js';
 import { verifyAdminRole } from '../../middleware/verifyAdminRole.js';
 import { confirmAuthToken } from '../../middleware/confirmAuth.js';
 
@@ -13,5 +13,10 @@ router.post("/login", loginAdmin);
 router.post("/logout", confirmAuthToken, verifyAdminRole, logoutAdmin);
 router.get("/myprofile", confirmAuthToken, verifyAdminRole, getAdminProfile);
 router.put("/updateprofile", confirmAuthToken, verifyAdminRole, updateAdminProfile);
+
+// Analytics Route
+// router.get('/analytics', confirmAuthToken, verifyAdminRole, getAdminAnalytics);
+router.get("/analytics", getAdminAnalytics);
+router.get("/bestsellers", getBestSellers);
 
 export default router;

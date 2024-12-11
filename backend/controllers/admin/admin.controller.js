@@ -197,3 +197,78 @@ export const updateAdminProfile = async (req, res) => {
         return res.status(500).json({ success: false, message: "Server error" });
     }
 };
+
+import AdminOrder from '../../models/admin/admin.order.model.js';
+
+export const getAdminAnalytics = async (req, res) => {
+    try {
+        const totalEarningsResult = await AdminOrder.aggregate([
+            { $match: { orderStatus: "Received" } },
+            { $group: { _id: null, total: { $sum: "$totalAmount" } } },
+        ]);
+        const totalEarnings = totalEarningsResult[0]?.total || 0;
+
+        const totalOrders = await AdminOrder.countDocuments();
+
+        const monthlyEarningsResult = await AdminOrder.aggregate([
+            { $match: { orderStatus: "Received" } },
+            {
+                $group: {
+                    _id: { month: { $month: "$createdAt" } },
+                    earnings: { $sum: "$totalAmount" },
+                },
+            },
+            { $sort: { "_id.month": 1 } },
+        ]);
+
+        const monthlyEarnings = Array.from({ length: 12 }, (_, i) => ({
+            month: i + 1,
+            earnings: 0,
+        }));
+
+        monthlyEarningsResult.forEach((entry) => {
+            monthlyEarnings[entry._id.month - 1].earnings = entry.earnings;
+        });
+
+        res.status(200).json({
+            totalEarnings,
+            totalOrders,
+            monthlyEarnings,
+        });
+    } catch (error) {
+        console.error("Error fetching analytics:", error.message);
+        res.status(500).json({ error: "Failed to fetch analytics data" });
+    }
+};
+
+import Product from '../../models/product.model.js';
+export const getBestSellers = async (req, res) => {
+    try {
+        const bestSellersResult = await AdminOrder.aggregate([
+            { $unwind: "$items" }, 
+            { $group: { 
+                _id: "$items.product", 
+                totalSold: { $sum: "$items.quantity" },
+            }},
+            { $sort: { totalSold: -1 } }, 
+            { $limit: 10 }, // Get top 10 best sellers
+        ]);
+
+        // Map the product IDs to actual product data
+        const bestSellers = await Product.find({
+            '_id': { $in: bestSellersResult.map(item => item._id) }
+        }).select('name price image');
+
+        // Combine the best-selling product data with the quantities sold
+        const bestSellersWithQuantities = bestSellers.map(product => {
+            const totalSold = bestSellersResult.find(item => item._id.toString() === product._id.toString()).totalSold;
+            return { product, totalSold };
+        });
+
+        res.status(200).json({ bestSellers: bestSellersWithQuantities });
+    } catch (error) {
+        console.error("Error fetching best sellers:", error.message);
+        res.status(500).json({ error: "Failed to fetch best sellers." });
+    }
+};
+
