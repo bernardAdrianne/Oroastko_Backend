@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import UserCart from "../../models/user.cart.model.js";
 import UserOrder from "../../models/user.order.model.js";
 import AdminOrder from '../../models/admin/admin.order.model.js';
@@ -40,7 +41,7 @@ export const placeOrder = async (req, res) => {
                 price: item.product.price,
             })),
             totalAmount,
-            userStatus: 'Pending',
+            userStatus: 'Order Confirmed',
         });
         await userOrder.save();
 
@@ -52,7 +53,7 @@ export const placeOrder = async (req, res) => {
                 quantity: item.quantity,
             })),
             totalAmount,
-            orderStatus: 'Pending',
+            orderStatus: 'Order Confirmed',
         });
         await adminOrder.save();
 
@@ -122,5 +123,45 @@ export const deleteOrder = async (req, res) => {
     } catch (error) {
         console.error("Error deleting order: ", error.message);
         return res.status(500).json({ success: false, message: "Server error" });
+    }
+};
+
+export const cancelOrder = async (req, res) => {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({ success: false, message: "Invalid order ID." });
+    }
+
+    try {
+        const userOrder = await UserOrder.findById(id);
+
+        if (!userOrder) {
+            return res.status(404).json({ success: false, message: "Order not found." });
+        }
+
+        if (['Cancelled', 'Ready for pick-up', 'Received'].includes(userOrder.userStatus)) {
+            return res.status(400).json({ success: false, message: "Order cannot be cancelled." });
+        }
+
+        // Update the user order
+        userOrder.userStatus = 'Cancelled';
+        await userOrder.save();
+
+        // Update the admin order
+        const adminOrder = await AdminOrder.findOneAndUpdate(
+            { user: userOrder.user, totalAmount: userOrder.totalAmount },
+            { orderStatus: 'Cancelled' },
+            { new: true }
+        );
+
+        if (!adminOrder) {
+            return res.status(404).json({ success: false, message: "Admin order not found for this user order." });
+        }
+
+        return res.status(200).json({ success: true, message: "Order cancelled successfully.", order: userOrder });
+    } catch (error) {
+        console.error("Error cancelling order: ", error.message);
+        return res.status(500).json({ success: false, message: "Server error." });
     }
 };

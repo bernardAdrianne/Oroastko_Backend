@@ -32,8 +32,8 @@ const userOrderSchema = new mongoose.Schema({
     },
     userStatus: {
         type: String,
-        enum: ['Pending', 'Order Confirmed', 'Preparing', 'Received'],
-        default: 'Pending',
+        enum: ['Order Confirmed', 'Preparing', 'Ready for pick-up', 'Received', 'Cancelled'],
+        default: 'Order Confirmed',
     },
 }, {
     timestamps: true,

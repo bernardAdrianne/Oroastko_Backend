@@ -29,8 +29,8 @@ const adminOrderSchema = new mongoose.Schema({
     },
     orderStatus: {
         type: String,
-        enum: ['Pending', 'Order Confirmed', 'Preparing', 'Received'],
-        default: 'Pending',
+        enum: ['Order Confirmed', 'Preparing', 'Ready for pick-up', 'Received', 'Cancelled'],
+        default: 'Order Confirmed',
     },
     managedBy: {
         type: mongoose.Schema.Types.ObjectId,

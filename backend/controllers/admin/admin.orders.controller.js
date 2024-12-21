@@ -55,7 +55,7 @@ export const orderStatus = async (req, res) => {
         return res.status(400).json({ success: false, message: "Invalid order ID." });
     }
 
-    const validStatuses = ['Pending', 'Order Confirmed', 'Preparing', 'Received'];
+    const validStatuses = ['Order Confirmed', 'Preparing', 'Ready for pick-up', 'Received', 'Cancelled'];
     if (!validStatuses.includes(status)) {
         return res.status(400).json({ success: false, message: "Invalid order status." });
     }
