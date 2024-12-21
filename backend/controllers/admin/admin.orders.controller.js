@@ -7,7 +7,7 @@ export const getOrders = async (req, res) => {
     try {
         const orders = await AdminOrder.find()
             .populate('user', 'fullname username')
-            .populate('items.product', 'name price image') 
+            .populate('items.product', 'name price time image') 
             .select('items.quantity totalAmount orderStatus createdAt')
 
         if (!orders || orders.length === 0) {
@@ -31,7 +31,7 @@ export const viewOrder = async (req, res) => {
     try {
         const order = await AdminOrder.findById(id)
             .populate('user', 'fullname username') 
-            .populate('items.product', 'name price image') 
+            .populate('items.product', 'name price time image') 
             .select('items.quantity totalAmount orderStatus createdAt'); 
 
         if (!order) {
@@ -48,8 +48,8 @@ export const viewOrder = async (req, res) => {
 
 //ADMIN UPDATE ORDER STATUS
 export const orderStatus = async (req, res) => {
-    const { id } = req.params;
-    const { status } = req.body; 
+    const { id } = req.params; // AdminOrder ID
+    const { status } = req.body; // New status
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
         return res.status(400).json({ success: false, message: "Invalid order ID." });
@@ -61,32 +61,48 @@ export const orderStatus = async (req, res) => {
     }
 
     try {
-        const adminOrder = await AdminOrder.findByIdAndUpdate(
-            id,
-            { orderStatus: status },
-            { new: true }
-        );
-
+        // Fetch the AdminOrder first
+        const adminOrder = await AdminOrder.findById(id);
         if (!adminOrder) {
             return res.status(404).json({ success: false, message: "Admin order not found." });
         }
 
-        const userOrder = await UserOrder.findOneAndUpdate(
-            { user: adminOrder.user, totalAmount: adminOrder.totalAmount }, 
-            { userStatus: status },
-            { new: true }
-        );
+        // Fetch the corresponding UserOrder based on the user and totalAmount
+        const userOrder = await UserOrder.findOne({
+            user: adminOrder.user,
+            totalAmount: adminOrder.totalAmount,
+        });
 
         if (!userOrder) {
-            console.warn(`No corresponding UserOrder found for AdminOrder with ID: ${id}`);
+            return res.status(404).json({ success: false, message: "Corresponding user order not found." });
         }
 
-        return res.status(200).json({ success: true, message: "Order status updated successfully.", data: adminOrder });
+        // Prevent updating if the current status is 'Cancelled'
+        if (userOrder.userStatus === 'Cancelled') {
+            return res.status(400).json({
+                success: false,
+                message: "Order cannot be updated because it is already cancelled.",
+            });
+        }
+
+        // Update the statuses in both collections
+        adminOrder.orderStatus = status;
+        await adminOrder.save();
+
+        userOrder.userStatus = status;
+        await userOrder.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Order status updated successfully.",
+            data: { userOrder },
+        });
     } catch (error) {
         console.error("Error updating order status:", error.message);
         return res.status(500).json({ success: false, message: "Server error." });
     }
 };
+
 
 //ADMIN DELETE ORDER
 export const deleteOrder = async (req, res) => {
