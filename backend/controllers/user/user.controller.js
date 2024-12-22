@@ -48,14 +48,20 @@ const validatePhoneNumber = (phone) => {
 
 //CUSTOMER REGISTRATION
 export const registerUser = async (req, res) => {
-    const { username, email, password } = req.body;
+    const { username, email, phoneNumber, password } = req.body;
     
     if (!username){
         return res.status(400).json({ success: false, message: "Please provide your username." });
     }
-    if(!validateEmail(email)) {
+
+    if (!validateEmail(email)) {
         return res.status(400).json({ success: false, message: "Invalid email format." });
     }
+
+    if (!validatePhoneNumber(phoneNumber)) {
+        return res.status(400).json({ success: false, message: "Invalid phone number." });
+    }
+
     if (!password || password.length < 6) {
         return res.status(400).json({ success: false, message: "Password must be at least 6 characters." });
     }
@@ -74,6 +80,7 @@ export const registerUser = async (req, res) => {
         const newUser = new User({ 
             username, 
             email, 
+            phoneNumber,
             password: encryptedData,
             iv: iv, 
         });

@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import UserCart from "../../models/user.cart.model.js";
 import UserOrder from "../../models/user.order.model.js";
 import AdminOrder from '../../models/admin/admin.order.model.js';
-
+import Product from "../../models/product.model.js";
 
 //CUSTOMER PLACE ORDER IN CART
 export const placeOrder = async (req, res) => {
@@ -20,7 +20,7 @@ export const placeOrder = async (req, res) => {
             return res.status(400).json({ success: false, message: "Your cart is empty." });
         }
 
-        const selectedCartItems = userCart.items.filter(item => 
+        const selectedCartItems = userCart.items.filter(item =>
             selectedItems.includes(item.product._id.toString())
         );
 
@@ -28,11 +28,30 @@ export const placeOrder = async (req, res) => {
             return res.status(400).json({ success: false, message: "Selected items not found in cart." });
         }
 
+        // Check stock availability
+        for (const item of selectedCartItems) {
+            if (item.quantity > item.product.quantity) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Insufficient stock for product ${item.product.name}. Available: ${item.product.quantity}.`,
+                });
+            }
+        }
+
+        // Deduct stock from each product
+        for (const item of selectedCartItems) {
+            const product = await Product.findById(item.product._id);
+            product.quantity -= item.quantity;
+            await product.save();
+        }
+
+        // Calculate total amount
         const totalAmount = selectedCartItems.reduce(
             (total, item) => total + item.quantity * item.product.price,
             0
         );
 
+        // Save user order
         const userOrder = new UserOrder({
             user: userId,
             items: selectedCartItems.map(item => ({
@@ -45,6 +64,7 @@ export const placeOrder = async (req, res) => {
         });
         await userOrder.save();
 
+        // Save admin order
         const adminOrder = new AdminOrder({
             user: userId,
             items: selectedCartItems.map(item => ({
@@ -57,15 +77,16 @@ export const placeOrder = async (req, res) => {
         });
         await adminOrder.save();
 
-        userCart.items = userCart.items.filter(item => 
+        // Remove ordered items from user cart
+        userCart.items = userCart.items.filter(item =>
             !selectedItems.includes(item.product._id.toString())
         );
         await userCart.save();
 
-        return res.status(201).json({ 
-            success: true, 
-            message: "Order placed successfully.", 
-            order: userOrder 
+        return res.status(201).json({
+            success: true,
+            message: "Order placed successfully.",
+            order: userOrder,
         });
     } catch (error) {
         console.error("Error placing order: ", error.message);
@@ -134,7 +155,7 @@ export const cancelOrder = async (req, res) => {
     }
 
     try {
-        const userOrder = await UserOrder.findById(id);
+        const userOrder = await UserOrder.findById(id).populate('items.product');
 
         if (!userOrder) {
             return res.status(404).json({ success: false, message: "Order not found." });
@@ -144,11 +165,19 @@ export const cancelOrder = async (req, res) => {
             return res.status(400).json({ success: false, message: "Order cannot be cancelled." });
         }
 
-        // Update the user order
+        // Restore product stock
+        const items = userOrder.items;
+        for (const item of items) {
+            const product = item.product;
+            product.quantity += item.quantity;
+            await product.save();
+        }
+
+        // Update the user order status
         userOrder.userStatus = 'Cancelled';
         await userOrder.save();
 
-        // Update the admin order
+        // Update the admin order status
         const adminOrder = await AdminOrder.findOneAndUpdate(
             { user: userOrder.user, totalAmount: userOrder.totalAmount },
             { orderStatus: 'Cancelled' },

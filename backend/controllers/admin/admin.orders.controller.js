@@ -7,7 +7,7 @@ export const getOrders = async (req, res) => {
     try {
         const orders = await AdminOrder.find()
             .populate('user', 'fullname username')
-            .populate('items.product', 'name price time image') 
+            .populate('items.product', 'name price quantity time image') 
             .select('items.quantity totalAmount orderStatus createdAt')
 
         if (!orders || orders.length === 0) {
@@ -31,7 +31,7 @@ export const viewOrder = async (req, res) => {
     try {
         const order = await AdminOrder.findById(id)
             .populate('user', 'fullname username') 
-            .populate('items.product', 'name price time image') 
+            .populate('items.product', 'name price quantity time image') 
             .select('items.quantity totalAmount orderStatus createdAt'); 
 
         if (!order) {
@@ -45,11 +45,10 @@ export const viewOrder = async (req, res) => {
     }
 };
 
-
 //ADMIN UPDATE ORDER STATUS
 export const orderStatus = async (req, res) => {
-    const { id } = req.params; // AdminOrder ID
-    const { status } = req.body; // New status
+    const { id } = req.params;
+    const { status } = req.body; 
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
         return res.status(400).json({ success: false, message: "Invalid order ID." });
@@ -79,10 +78,7 @@ export const orderStatus = async (req, res) => {
 
         // Prevent updating if the current status is 'Cancelled'
         if (userOrder.userStatus === 'Cancelled') {
-            return res.status(400).json({
-                success: false,
-                message: "Order cannot be updated because it is already cancelled.",
-            });
+            return res.status(400).json({ success: false, message: "Order cannot be updated." });
         }
 
         // Update the statuses in both collections
@@ -102,7 +98,6 @@ export const orderStatus = async (req, res) => {
         return res.status(500).json({ success: false, message: "Server error." });
     }
 };
-
 
 //ADMIN DELETE ORDER
 export const deleteOrder = async (req, res) => {

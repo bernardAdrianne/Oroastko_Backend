@@ -25,7 +25,7 @@ export const getViewProduct = async (req, res) => {
 
     try {
         const product = await Product.findById(id)
-            .select('name price image category')
+            .select('name price quantity image category')
             .populate('category', 'categoryName');
 
         if (!product) {
@@ -41,9 +41,9 @@ export const getViewProduct = async (req, res) => {
 
 //ADMIN CREATE NEW PRODUCT
 export const createProduct = async (req, res) => {
-    const { name, price, time, image, category } = req.body;
+    const { name, price, quantity, time, image, category } = req.body;
 
-    if (!name || !price || !time || !image || !category) {
+    if (!name || !price || !quantity || !time || !image || !category) {
         return res.status(400).json({ success: false, message: "Please provide all the required fields." });
     }
 
@@ -62,9 +62,9 @@ export const createProduct = async (req, res) => {
             return res.status(404).json({ success: false, message: "Invalid image URL." });
         }
 
-        const newProduct = new Product({ name, price, time, image, category: categoryId });
+        const newProduct = new Product({ name, price, quantity, time, image, category: categoryId });
         await newProduct.save();
-        return res.status(201).json({ success: true, message: "Product added successfully.", data: newProduct });
+        return res.status(200).json({ success: true, message: "Product added successfully.", data: newProduct });
     } catch (error) {
         console.error("Error adding new product:", error.message);
         return res.status(500).json({ success: false, message: "Server error" });
