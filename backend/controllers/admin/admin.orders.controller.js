@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import AdminOrder from '../../models/admin/admin.order.model.js';
 import UserOrder from '../../models/user.order.model.js';
+import Notification from '../../models/user.notif.model.js';
 
 //ADMIN VIEW ALL ORDERS
 export const getOrders = async (req, res) => {
@@ -87,6 +88,12 @@ export const orderStatus = async (req, res) => {
 
         userOrder.userStatus = status;
         await userOrder.save();
+
+        const updateNotif = new Notification({
+            user: adminOrder.user,
+            order: userOrder._id,
+        });
+        await updateNotif.save();
 
         return res.status(200).json({
             success: true,

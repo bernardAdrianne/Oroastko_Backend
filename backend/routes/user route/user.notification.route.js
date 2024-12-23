@@ -7,6 +7,6 @@ const router = express.Router();
 
 router.get("/getNotifs", confirmAuthToken, verifyUserRole, getNotifs);
 router.get("/getNotif", confirmAuthToken, verifyUserRole, getNotif);
-router.delete("/deleteNotif", confirmAuthToken, verifyUserRole, deleteNotif);
+router.delete("/deleteNotif/:id", confirmAuthToken, verifyUserRole, deleteNotif);
 
 export default router;

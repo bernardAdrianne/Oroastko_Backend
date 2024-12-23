@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Notification from "../../models/user.notif.model.js";
 
 
@@ -21,6 +22,7 @@ export const getNotifs = async (req, res) => {
         }
 
         const mappedNotifications = notifications.map(notification => ({
+            notifId: notification._id,
             orderId: notification.order._id,
             username: notification.user.username,
             products: notification.order.items.map(item => ({
@@ -46,5 +48,22 @@ export const getNotif = async (req, res) => {
 
 //DELETE NOTIFICATION ORDER
 export const deleteNotif = async (req, res) => {
+    try {
+        const notifId = req.params.id;
 
+        if (!mongoose.Types.ObjectId.isValid(notifId)) {
+            return res.status(400).json({ success: false, message: "Invalid notification ID." });
+        }
+
+        const notification = await Notification.findByIdAndDelete(notifId);
+
+        if (!notification) {
+            return res.status(404).json({ success: false, message: "Notification not found." });
+        }
+
+        return res.status(200).json({ success: true, message: "Notification deleted successfully." });
+    } catch (error) {
+        console.error("Error deleting notification: ", error.message);
+        return res.status(500).json({ success: false, message: "Server error" });
+    }
 };
