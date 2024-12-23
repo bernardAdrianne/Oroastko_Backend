@@ -3,6 +3,7 @@ import UserCart from "../../models/user.cart.model.js";
 import UserOrder from "../../models/user.order.model.js";
 import AdminOrder from '../../models/admin/admin.order.model.js';
 import Product from "../../models/product.model.js";
+import Notification from "../../models/user.notif.model.js";
 
 //CUSTOMER PLACE ORDER IN CART
 export const placeOrder = async (req, res) => {
@@ -63,6 +64,12 @@ export const placeOrder = async (req, res) => {
             userStatus: 'Order Confirmed',
         });
         await userOrder.save();
+
+        const notification = new Notification({
+            user: userId,
+            order: userOrder._id,
+        });
+        await notification.save();
 
         // Save admin order
         const adminOrder = new AdminOrder({
@@ -147,6 +154,7 @@ export const deleteOrder = async (req, res) => {
     }
 };
 
+//CUSTOMER CANCEL ORDER REQUEST
 export const cancelOrder = async (req, res) => {
     const { id } = req.params;
 

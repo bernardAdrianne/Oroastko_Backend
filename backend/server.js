@@ -20,6 +20,7 @@ import userRoutes from './routes/user route/user.route.js';
 import userProductBrowsing from './routes/user route/user.product.browsing.route.js';
 import userCart from './routes/user route/user.cart.route.js';
 import userOrder from './routes/user route/user.order.route.js';
+import userNotif from './routes/user route/user.notification.route.js';
 import fs from 'fs';
 
 
@@ -63,6 +64,7 @@ app.use("/oroastko/user", userRoutes);
 app.use("/oroastko/user/products", userProductBrowsing);
 app.use("/oroastko/user/cart", userCart);
 app.use("/oroastko/user/order", userOrder);
+app.use("/oroastko/user/notification", userNotif);
 
 //User login render
 app.get('/oroastko/user/login', (req, res) => {
