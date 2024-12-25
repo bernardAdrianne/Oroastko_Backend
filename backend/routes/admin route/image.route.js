@@ -8,7 +8,7 @@ import { confirmAuthToken } from '../../middleware/confirmAuth.js';
 
 const router = express.Router();
 
-// Admin Order Management
+// Admin Image Management
 router.post("/addImage", confirmAuthToken, verifyAdminRole, uploadImage.single('image'), addImage);
 router.get("/getImage", confirmAuthToken, verifyAdminRole, getImage);
 router.delete("/deleteImage/:id", confirmAuthToken, verifyAdminRole, deleteImage);

@@ -1,9 +1,11 @@
+//Admin analytics model
 import mongoose from 'mongoose';
 
 const analyticsSchema = new mongoose.Schema(
     {
         totalEarnings: { type: Number, default: 0 },
         totalOrders: { type: Number, default: 0 },
+
         monthlyEarnings: [
             {
                 month: { type: Number }, 
@@ -19,6 +21,7 @@ const analyticsSchema = new mongoose.Schema(
                 totalSold: { type: Number, default: 0 },
             },
         ],
+        
     },
     { timestamps: true }
 );

@@ -4,7 +4,6 @@ import jwt from 'jsonwebtoken';
 import Blacklist from '../../models/blacklist/blacklist.model.js';
 import crypto from 'crypto';
 
-
 function encrypt(text) {
     if (!process.env.AES_KEY) throw new Error("AES_KEY is undefined.");
     if (!text) throw new Error("Text to encrypt is undefined.");
@@ -199,17 +198,21 @@ export const updateAdminProfile = async (req, res) => {
 };
 
 import AdminOrder from '../../models/admin/admin.order.model.js';
+import Product from '../../models/product.model.js';
 
 export const getAdminAnalytics = async (req, res) => {
     try {
+        // Total Earnings
         const totalEarningsResult = await AdminOrder.aggregate([
             { $match: { orderStatus: "Received" } },
             { $group: { _id: null, total: { $sum: "$totalAmount" } } },
         ]);
         const totalEarnings = totalEarningsResult[0]?.total || 0;
 
+        // Total Orders
         const totalOrders = await AdminOrder.countDocuments();
 
+        // Monthly Earnings
         const monthlyEarningsResult = await AdminOrder.aggregate([
             { $match: { orderStatus: "Received" } },
             {
@@ -230,10 +233,28 @@ export const getAdminAnalytics = async (req, res) => {
             monthlyEarnings[entry._id.month - 1].earnings = entry.earnings;
         });
 
+        // Best Sellers
+        const bestSellersResult = await AdminOrder.aggregate([
+            { $unwind: "$items" },
+            { $group: { _id: "$items.product", totalSold: { $sum: "$items.quantity" } } },
+            { $sort: { totalSold: -1 } },
+            { $limit: 10 },
+        ]);
+
+        const bestSellers = await Product.find({
+            '_id': { $in: bestSellersResult.map(item => item._id) }
+        }).select('name price image');
+
+        const bestSellersWithQuantities = bestSellers.map(product => {
+            const totalSold = bestSellersResult.find(item => item._id.toString() === product._id.toString()).totalSold;
+            return { product, totalSold };
+        });
+        
         res.status(200).json({
             totalEarnings,
             totalOrders,
             monthlyEarnings,
+            bestSellers: bestSellersWithQuantities,
         });
     } catch (error) {
         console.error("Error fetching analytics:", error.message);
@@ -241,25 +262,19 @@ export const getAdminAnalytics = async (req, res) => {
     }
 };
 
-import Product from '../../models/product.model.js';
 export const getBestSellers = async (req, res) => {
     try {
         const bestSellersResult = await AdminOrder.aggregate([
-            { $unwind: "$items" }, 
-            { $group: { 
-                _id: "$items.product", 
-                totalSold: { $sum: "$items.quantity" },
-            }},
-            { $sort: { totalSold: -1 } }, 
-            { $limit: 10 }, // Get top 10 best sellers
+            { $unwind: "$items" },
+            { $group: { _id: "$items.product", totalSold: { $sum: "$items.quantity" } } },
+            { $sort: { totalSold: -1 } },
+            { $limit: 10 },
         ]);
 
-        // Map the product IDs to actual product data
         const bestSellers = await Product.find({
             '_id': { $in: bestSellersResult.map(item => item._id) }
         }).select('name price image');
 
-        // Combine the best-selling product data with the quantities sold
         const bestSellersWithQuantities = bestSellers.map(product => {
             const totalSold = bestSellersResult.find(item => item._id.toString() === product._id.toString()).totalSold;
             return { product, totalSold };
@@ -272,3 +287,104 @@ export const getBestSellers = async (req, res) => {
     }
 };
 
+import AdminAnalytics from '../../models/admin/admin.analytics.model.js';
+import xlsx from 'xlsx';
+
+export const generateAnalyticsReport = async (req, res) => {
+    try {
+        // Fetch analytics data if it exists
+        const existingAnalyticsData = await AdminAnalytics.findOne();
+
+        let analyticsData;
+
+        if (!existingAnalyticsData) {
+            // Aggregate data from AdminOrder if no existing analytics
+            const totalEarningsResult = await AdminOrder.aggregate([
+                { $match: { orderStatus: "Received" } },
+                { $group: { _id: null, total: { $sum: "$totalAmount" } } },
+            ]);
+
+            const totalEarnings = totalEarningsResult[0]?.total || 0;
+
+            const totalOrders = await AdminOrder.countDocuments();
+
+            // Monthly Earnings
+            const monthlyEarningsResult = await AdminOrder.aggregate([
+                { $match: { orderStatus: "Received" } },
+                {
+                    $group: {
+                        _id: { month: { $month: "$createdAt" } },
+                        earnings: { $sum: "$totalAmount" },
+                    },
+                },
+                { $sort: { "_id.month": 1 } },
+            ]);
+
+            const monthlyEarnings = Array.from({ length: 12 }, (_, i) => ({
+                month: i + 1,
+                earnings: 0,
+            }));
+
+            monthlyEarningsResult.forEach((entry) => {
+                monthlyEarnings[entry._id.month - 1].earnings = entry.earnings;
+            });
+
+            // Best Sellers
+            const bestSellersResult = await AdminOrder.aggregate([
+                { $unwind: "$items" },
+                { $group: { _id: "$items.product", totalSold: { $sum: "$items.quantity" } } },
+                { $sort: { totalSold: -1 } },
+                { $limit: 10 },
+            ]);
+
+            const bestSellers = await Product.find({
+                '_id': { $in: bestSellersResult.map(item => item._id) }
+            }).select('name price image');
+
+            const bestSellersWithQuantities = bestSellers.map(product => {
+                const totalSold = bestSellersResult.find(item => item._id.toString() === product._id.toString()).totalSold;
+                return { product, totalSold };
+            });
+
+            analyticsData = {
+                totalEarnings,
+                totalOrders,
+                monthlyEarnings,
+                bestSellers: bestSellersWithQuantities,
+                generatedAt: new Date().toISOString(),
+            };
+
+            // Save the new analytics data to the AdminAnalytics collection
+            await AdminAnalytics.create(analyticsData);
+
+        } else {
+            analyticsData = existingAnalyticsData;
+        }
+
+        // Now, generate the Excel report
+        const report = {
+            totalEarnings: analyticsData.totalEarnings,
+            totalOrders: analyticsData.totalOrders,
+            monthlyEarnings: analyticsData.monthlyEarnings, 
+            bestSellers: analyticsData.bestSellers,     
+            generatedAt: analyticsData.generatedAt,
+        };
+
+        // Convert report data to Excel format
+        const workbook = xlsx.utils.book_new();
+        const worksheet = xlsx.utils.json_to_sheet([report]);
+
+        xlsx.utils.book_append_sheet(workbook, worksheet, 'Analytics Report');
+
+        // Write to Excel file
+        const filePath = 'C:/Users/Win 10/Desktop/analytics-report.xlsx'; 
+        xlsx.writeFile(workbook, filePath);
+        
+        console.log('Analytics report exported successfully.');
+        return res.status(200).json({ success: true, filePath }); 
+
+    } catch (error) {
+        console.error('Error generating analytics report:', error.message);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+};

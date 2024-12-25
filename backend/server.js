@@ -53,7 +53,6 @@ app.use("/oroastko/admin/mycustomer", viewUsers);
 app.use("/oroastko/admin/orders", orderRoutes);
 app.use("/oroastko/admin/image", imageRoutes);
 
-
 //Admin login render
 app.get('/oroastko/admin/login', (req, res) => {
     res.render('adminLogin');
