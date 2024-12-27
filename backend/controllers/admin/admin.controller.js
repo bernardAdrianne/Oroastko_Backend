@@ -305,7 +305,6 @@ export const generateAnalyticsReport = async (req, res) => {
             ]);
 
             const totalEarnings = totalEarningsResult[0]?.total || 0;
-
             const totalOrders = await AdminOrder.countDocuments();
 
             // Monthly Earnings
@@ -373,11 +372,13 @@ export const generateAnalyticsReport = async (req, res) => {
         // Convert report data to Excel format
         const workbook = xlsx.utils.book_new();
         const worksheet = xlsx.utils.json_to_sheet([report]);
-
         xlsx.utils.book_append_sheet(workbook, worksheet, 'Analytics Report');
 
+        // Generate unique filename with timestamp
+        const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+        const filePath = `C:/Users/home/Desktop/analytics-report-${timestamp}.xlsx`;
+
         // Write to Excel file
-        const filePath = 'C:/Users/Win 10/Desktop/analytics-report.xlsx'; 
         xlsx.writeFile(workbook, filePath);
         
         console.log('Analytics report exported successfully.');
